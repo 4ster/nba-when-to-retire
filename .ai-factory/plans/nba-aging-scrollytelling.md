@@ -35,8 +35,8 @@
 ### Фаза 1 — Пайплайн данных (Python, TDD)
 - [x] **T2.** Тесты: загрузка и нормализация (`tests/test_normalize.py`) — per-36, фильтр ≥1000 мин, бакеты амплуа/эпох.
 - [x] **T3.** Реализация загрузки и нормализации (`fetch.py`, `transform/normalize.py`) — *blocked by T2*.
-- [ ] **T4.** Тесты: дельта-метод и `aging_curve` (`tests/test_aging_curve.py`) — год-к-году, коридор, `n`, survivorship.
-- [ ] **T5.** Реализация `aging_curve` дельта-методом (`transform/aging.py`) — *blocked by T4, T3*.
+- [x] **T4.** Тесты: дельта-метод и `aging_curve` (`tests/test_aging_curve.py`) — год-к-году, коридор, `n`, survivorship.
+- [x] **T5.** Реализация `aging_curve` дельта-методом (`transform/aging.py`) — *blocked by T4, T3*.
 - [ ] **T6.** Тесты: `survival`, `skill_decline`, `notable` — *(`tests/test_survival.py`, `test_skill_decline.py`, `test_notable.py`)*.
 - [ ] **T7.** Реализация `survival` / `skill_decline` / `notable` (`transform/*.py`) — *blocked by T6, T3*.
 - [ ] **T8.** Тесты: схема контракта §2 и бюджет < 300 КБ (`tests/test_schema_budget.py`).
