@@ -39,8 +39,8 @@
 - [x] **T5.** Реализация `aging_curve` дельта-методом (`transform/aging.py`) — *blocked by T4, T3*.
 - [x] **T6.** Тесты: `survival`, `skill_decline`, `notable` — *(`tests/test_survival.py`, `test_skill_decline.py`, `test_notable.py`)*.
 - [x] **T7.** Реализация `survival` / `skill_decline` / `notable` (`transform/*.py`) — *blocked by T6, T3*.
-- [ ] **T8.** Тесты: схема контракта §2 и бюджет < 300 КБ (`tests/test_schema_budget.py`).
-- [ ] **T9.** Реализация `schema.py` + `build.py` → `data/aging.json` (метаданные: дата данных, версия, дефолты §7) — *blocked by T8, T5, T7*.
+- [x] **T8.** Тесты: схема контракта §2 и бюджет < 300 КБ (`tests/test_schema_budget.py`).
+- [x] **T9.** Реализация `schema.py` + `build.py` → `data/aging.json` (метаданные: дата данных, версия, дефолты §7) — *blocked by T8, T5, T7*.
   - 🚦 **ГЕЙТ ФАЗЫ 1:** после T9 все тесты пайплайна зелёные — только тогда Фаза 2.
 
 ### Фаза 2 — index.html (scrollytelling)
