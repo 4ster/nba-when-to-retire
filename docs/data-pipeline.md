@@ -1,4 +1,4 @@
-[← Getting Started](getting-started.md) · [Назад к README](../README.md)
+[← Getting Started](getting-started.md) · [Назад к README](../README.md) · [Art Direction →](art-direction.md)
 
 # Data Pipeline
 
