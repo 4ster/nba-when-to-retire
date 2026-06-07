@@ -28,7 +28,9 @@ insba_dashboard_contest/
 ├── pyproject.toml       # конфиг pytest + ruff
 ├── index.html           # единственный артефакт рантайма (каркас: темы, seed, сцены, модалка)
 ├── package.json         # Node-инструменты сборки/проверки (jsdom, d3) — devDependencies
-├── tools/               # build-утилиты: check_html.mjs (гейт JS-блока), verify_dom.mjs (jsdom)
+├── tools/               # build-утилиты: check_html.mjs (гейт JS-блока), verify_dom.mjs (jsdom),
+│   │                     #   inline_assets.mjs (вендоринг d3/scrollama/Oswald в index.html)
+│   └── vendor/           # инлайн-ассеты: scrollama.min.js, oswald-{latin,cyrillic}.woff2 (d3 — из npm)
 ├── pipeline/            # офлайн-пайплайн данных на Python (build-time)
 │   ├── logging_setup.py # настройка логирования (LOG_LEVEL)
 │   ├── fetch.py         # загрузка сырого CSV + валидация колонок
@@ -63,9 +65,10 @@ insba_dashboard_contest/
 | `task download` | Скачать датасет sumitrodatta/nba-aba-baa-stats в `data/sumitro` (kaggle CLI + токен) |
 | `task test` | Тесты пайплайна (pytest) — TDD-гейт перед фронтом |
 | `task data` | Прогнать пайплайн → слим-JSON `data/aging.json` (+ проверка бюджета) |
-| `task build` | Полная сборка: тесты → данные → встраивание JSON в `index.html` → валидация |
+| `task inline` | Вендоринг офлайн-ассетов (d3 + scrollama + Oswald base64) в `index.html` |
+| `task build` | Полная сборка: тесты → данные → вендоринг → встраивание JSON → валидация |
 | `task check` | `node --check` JS-блока (`id="app"`) + проверка null-байтов |
-| `task verify` | Браузерная проверка (jsdom): подзаголовок-диапазон + модалка/a11y + 0 ошибок |
+| `task verify` | Браузерная проверка (jsdom): офлайн+dark, 7 сигнатур, морф сцен на одном канвасе, модалка/a11y, 0 ошибок |
 | `task open` | Открыть `index.html` в браузере |
 | `task clean` | Удалить производные артефакты |
 | `task ci` | Полный прогон (`build` + `verify`) |
@@ -77,6 +80,7 @@ insba_dashboard_contest/
 | README | README.md | Лендинг проекта |
 | Getting Started | `docs/getting-started.md` | Требования, установка, сборка, запуск |
 | Data Pipeline | `docs/data-pipeline.md` | Контракт данных, методика, достоверность |
+| Art Direction | `docs/art-direction.md` | Офлайн-вендоринг, токены, морф-движок, 7 сцен |
 
 ## Файлы AI-контекста
 
