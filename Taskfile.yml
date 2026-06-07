@@ -23,9 +23,10 @@ tasks:
       - task --list
 
   install:
-    desc: Установить зависимости пайплайна (pandas, pytest и т.д.)
+    desc: Установить зависимости пайплайна (pandas, pytest) и инструментов (jsdom, d3)
     cmds:
       - '{{.PIP}} install -r pipeline/requirements.txt'
+      - npm install
 
   test:
     desc: Тесты пайплайна (pytest) — дельта-метод, per-36, survivorship, схема, бюджет
@@ -64,6 +65,11 @@ tasks:
     cmds:
       - node tools/check_html.mjs {{.HTML}}
 
+  verify:
+    desc: 'Браузерная проверка {{.HTML}} (jsdom): подзаголовок-диапазон, модалка/a11y, 0 ошибок'
+    cmds:
+      - node tools/verify_dom.mjs
+
   open:
     desc: Открыть готовый {{.HTML}} в браузере по умолчанию
     cmds:
@@ -86,6 +92,7 @@ tasks:
       - rm -rf data .app.check.js
 
   ci:
-    desc: Полный прогон для проверки — тесты, сборка, валидация
+    desc: Полный прогон для проверки — тесты, сборка, валидация, браузерная проверка
     cmds:
       - task: build
+      - task: verify

@@ -1,0 +1,15 @@
+{
+  "name": "nba-aging-dashboard-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Инструменты сборки/проверки для index.html (валидация и браузерная проверка). Сам дашборд — один self-contained index.html без рантайм-зависимостей.",
+  "type": "module",
+  "scripts": {
+    "check": "node tools/check_html.mjs index.html",
+    "verify": "node tools/verify_dom.mjs"
+  },
+  "devDependencies": {
+    "d3": "7.9.0",
+    "jsdom": "29.1.1"
+  }
+}
