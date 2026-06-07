@@ -44,7 +44,7 @@
   - 🚦 **ГЕЙТ ФАЗЫ 1:** после T9 все тесты пайплайна зелёные — только тогда Фаза 2.
 
 ### Фаза 2 — index.html (scrollytelling)
-- [ ] **T10.** Встраивание JSON `embed.py` → `<script id="seed-data">` — *blocked by T9, T11*.
+- [x] **T10.** Встраивание JSON `embed.py` → `<script id="seed-data">` — *blocked by T9, T11*.
 - [x] **T11.** Каркас `index.html` — темы (data-theme, токены), CDN с фикс. версиями, один `<script id="app">`, `JSON.parse` в try/catch, prefers-reduced-motion, дата данных — *blocked by T9*.
 - [ ] **T12.** Сцены US-1 (средняя кривая) + US-2 (по амплуа) — *blocked by T11*.
 - [ ] **T13.** Сцены US-3 (порядок угасания) + US-4 (эпохи) — *blocked by T11*.
