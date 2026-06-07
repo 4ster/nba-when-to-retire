@@ -52,11 +52,17 @@ tasks:
         if(n>{{.BUDGET}}){console.error('FAIL: '+n+' B > budget {{.BUDGET}} B');process.exit(1)}
         console.log('OK: slim-JSON '+n+' B (budget {{.BUDGET}} B)')"
 
+  inline:
+    desc: 'Вендоринг офлайн-ассетов в {{.HTML}}: d3 + scrollama + Oswald base64 (строгий офлайн)'
+    cmds:
+      - node tools/inline_assets.mjs {{.HTML}}
+
   build:
-    desc: Полная сборка — данные (TDD-гейт) → встраивание JSON в {{.HTML}} → валидация
+    desc: Полная сборка — данные (TDD-гейт) → вендоринг ассетов → встраивание JSON → валидация
     deps: [test]
     cmds:
       - task: data
+      - task: inline
       - '{{.PY}} -m pipeline.embed --data {{.DATA}} --html {{.HTML}}'
       - task: check
 

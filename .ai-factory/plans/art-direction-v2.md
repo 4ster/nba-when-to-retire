@@ -41,21 +41,21 @@ RULES/SPEC и новых DESIGN.md/BRIEF.md. Это редизайн **толь�
 ## Tasks
 
 ### Фаза 0 — Инфраструктура / фундамент
-- [ ] **R1.** Вендорить d3 + scrollama инлайн (строгий офлайн), убрать CDN+SRI — *нет зависимостей*.
-- [ ] **R2.** Встроить Oswald base64-woff2 (`@font-face`, latin+cyr, 500/600, ≤90 КБ); `--font-display`/`--font-text`; удалить `--mono`; `tabular-nums` — *нет зависимостей*.
-- [ ] **R3.** Полный токен-набор DESIGN §1 (`:root` тёмная + `[data-theme=light]`), `<html data-theme="dark">`, prefers-reduced-motion — *нет зависимостей*.
+- [x] **R1.** Вендорить d3 + scrollama инлайн (строгий офлайн), убрать CDN+SRI — *нет зависимостей*.
+- [x] **R2.** Встроить Oswald base64-woff2 (`@font-face`, latin+cyr, 500/600, ≤90 КБ); `--font-display`/`--font-text`; удалить `--mono`; `tabular-nums` — *нет зависимостей*.
+- [x] **R3.** Полный токен-набор DESIGN §1 (`:root` тёмная + `[data-theme=light]`), `<html data-theme="dark">`, prefers-reduced-motion — *нет зависимостей*.
 
 ### Фаза 1 — Движок
-- [ ] **R4.** Единый sticky-канвас + морф-движок сцен (update/морф, не пересоздание), `data-signature`, тайминги из `--t-*`; сохранить модалку/подзаголовок/theme-hook — *blocked by R1, R3*.
+- [x] **R4.** Единый sticky-канвас + морф-движок сцен (update/морф, не пересоздание), `data-signature`, тайминги из `--t-*`; сохранить модалку/подзаголовок/theme-hook — *blocked by R1, R3*.
 
 ### Фаза 2 — Сцены (сигнатуры + редакторский голос + console.assert)
-- [ ] **R5.** US-1 «Гора» (`us1-mountain`): линия-герой + коридор-тень + градиент выцветания + джерси-номер пика — *blocked by R4, R2*.
-- [ ] **R6.** US-2 «Эстафета» (`us2-split`) + вау-морф расщепления US-1→2 — *blocked by R5*.
-- [ ] **R7.** US-3 «Табло вылетов» (`us3-board`): small multiples + номера Oswald — *blocked by R4, R2*.
-- [ ] **R8.** US-4 «Хроника» (`us4-film`): эпохи фактурой штриха + заливка зазора хвостов — *blocked by R4*.
-- [ ] **R9.** US-5 «Прожектор» (`us5-spotlight`): средняя-призрак + именные траектории — *blocked by R4*.
-- [ ] **R10.** US-6 «Обрыв» (`us6-cliff`) + вау-морф осыпания US-5→6 + флажок медианы — *blocked by R9*.
-- [ ] **R11.** US-7 «Тренерский планшет» (`us7-clipboard`): сегмент-контролы, базовая-призрак, сброс — *blocked by R4, R2*.
+- [x] **R5.** US-1 «Гора» (`us1-mountain`): линия-герой + коридор-тень + градиент выцветания + джерси-номер пика — *blocked by R4, R2*.
+- [x] **R6.** US-2 «Эстафета» (`us2-split`) + вау-морф расщепления US-1→2 — *blocked by R5*.
+- [x] **R7.** US-3 «Табло вылетов» (`us3-board`): small multiples + номера Oswald — *blocked by R4, R2*.
+- [x] **R8.** US-4 «Хроника» (`us4-film`): эпохи фактурой штриха + заливка зазора хвостов — *blocked by R4*.
+- [x] **R9.** US-5 «Прожектор» (`us5-spotlight`): средняя-призрак + именные траектории — *blocked by R4*.
+- [x] **R10.** US-6 «Обрыв» (`us6-cliff`) + вау-морф осыпания US-5→6 + флажок медианы — *blocked by R9*.
+- [x] **R11.** US-7 «Тренерский планшет» (`us7-clipboard`): сегмент-контролы, базовая-призрак, сброс — *blocked by R4, R2*.
 
 ### Фаза 3 — Гейт
 - [ ] **R12.** Расширить `tools/verify_dom.mjs` (data-signature, dark default, офлайн, Oswald, нет `--mono`, персистентный канвас, модалка/диапазон) — *blocked by R5–R11*.
