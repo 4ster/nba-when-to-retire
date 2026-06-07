@@ -76,10 +76,13 @@ def position_group(pos: str) -> str:
 
     Робастно к составным/кратким кодам (``G``, ``F``, ``G-F``, ``PG-SG``, ``F-C``):
     сначала пробуем полный код, затем первый токен до разделителя ``-``/``/``/пробел.
-    Нераспознанное амплуа не роняет билд — fallback на :data:`_POSITION_FALLBACK`
-    с предупреждением.
+    Нераспознанное или нестроковое амплуа (``NaN``/``None``/число из реальных данных)
+    не роняет билд — fallback на :data:`_POSITION_FALLBACK` с предупреждением.
     """
-    raw = (pos or "").strip().upper()
+    if not isinstance(pos, str):
+        log.warning("non-string position %r → fallback %s", pos, _POSITION_FALLBACK)
+        return _POSITION_FALLBACK
+    raw = pos.strip().upper()
     if raw in _POSITION_MAP:
         return _POSITION_MAP[raw]
     primary = re.split(r"[-/ ]", raw)[0] if raw else ""

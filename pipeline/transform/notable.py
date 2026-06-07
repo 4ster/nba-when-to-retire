@@ -21,6 +21,14 @@ log = get_logger(__name__)
 MIN_SEASONS_FADE = 3
 
 
+def _native_id(pid: object) -> object:
+    """Привести id к JSON-сериализуемому виду: numpy/pandas int → python int,
+    строковый id (sumitrodatta, напр. ``"abdelal01"``) оставить как есть."""
+    if isinstance(pid, str):
+        return pid
+    return int(pid)
+
+
 def _career_stats(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for pid, g in df.groupby("player_id"):
@@ -28,7 +36,7 @@ def _career_stats(df: pd.DataFrame) -> pd.DataFrame:
         peak_age = int(g_sorted.loc[g_sorted["value"].idxmax(), "age"])
         last_season = int(g_sorted["season"].max()) if "season" in g_sorted.columns else None
         rows.append({
-            "player_id": int(pid),
+            "player_id": _native_id(pid),
             "name": str(g_sorted["name"].iloc[0]),
             "n_seasons": int(len(g_sorted)),
             "peak_age": peak_age,
@@ -48,7 +56,7 @@ def _series(df: pd.DataFrame, player_id: int) -> list[dict]:
 def _record(stats: pd.DataFrame, df: pd.DataFrame, player_id: int, kind: str) -> dict:
     name = stats.loc[stats["player_id"] == player_id, "name"].iloc[0]
     return {
-        "player_id": int(player_id),
+        "player_id": _native_id(player_id),
         "name": name,
         "kind": kind,
         "series": _series(df, player_id),

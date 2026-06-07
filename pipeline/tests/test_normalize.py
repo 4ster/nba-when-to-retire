@@ -126,9 +126,9 @@ def test_position_group_handles_combined_and_short_codes(pos, expected):
     assert nz.position_group(pos) == expected
 
 
-@pytest.mark.parametrize("pos", ["", "X", "???", None])
+@pytest.mark.parametrize("pos", ["", "X", "???", None, np.nan, 3.0])
 def test_position_group_falls_back_instead_of_raising(pos):
-    # Нераспознанное амплуа не роняет билд — возвращает группу по умолчанию.
+    # Нераспознанное/нестроковое амплуа (вкл. NaN из реальных данных) не роняет билд.
     assert nz.position_group(pos) == nz._POSITION_FALLBACK
 
 

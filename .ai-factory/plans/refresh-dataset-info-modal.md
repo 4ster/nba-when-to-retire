@@ -38,8 +38,8 @@
 - [x] **D1.** Изучить и зафиксировать схему `sumitrodatta` (download + осмотр файлов/колонок). → Источники `Advanced.csv`+`Player Totals.csv` join по (season,player_id); lg='NBA' → 1950–2026; родной строковый player_id; обменянные = строка `NTM`; bpm NaN ~12.7% (до 1974). Маппинг в описании D3.
 - [x] **D2.** Тесты адаптера `load_sumitrodatta` (TDD) — грязные кейсы (амплуа, NaN BPM, TOT-дубли, player_id, active_next, частичное покрытие) — *blocked by D1*.
 - [x] **D3.** Реализация `load_sumitrodatta` в `pipeline/datasets.py` + регистрация в `DATASET_LOADERS` — *blocked by D1, D2*.
-- [ ] **D4.** Автоматизация: `task download` на новый слаг; динамический `DATA_THROUGH` + `season_min/max` в `meta` (`build.py`) — *blocked by D3*.
-- [ ] **D5.** Пересборка `data/aging.json` на новом датасете + встраивание в `index.html`; бюджет < 300 КБ — *blocked by D4*.
+- [x] **D4.** Автоматизация: `task download` на новый слаг; динамический `DATA_THROUGH` + `season_min/max` в `meta` (`build.py`) — *blocked by D3*.
+- [x] **D5.** Пересборка `data/aging.json` на новом датасете + встраивание в `index.html`; бюджет < 300 КБ — *blocked by D4*. → 37 КБ, сезоны 1952–2026, data_through=2025–26; долгожители LeBron/Vince Carter. Попутно исправлены 2 краша на реальных данных (NaN-амплуа в position_group, строковый player_id в notable).
 
 ### Фаза 2 — Интерфейс
 - [ ] **D6.** Подзаголовок: убрать двусмысленность — показать диапазон сезонов из `meta` — *blocked by D5*.

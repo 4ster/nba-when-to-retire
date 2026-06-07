@@ -113,3 +113,26 @@ def test_build_payload_aging_cells_have_required_fields():
     assert payload["aging_curve"], "aging_curve не должен быть пустым на этих данных"
     for cell in payload["aging_curve"]:
         assert schema.REQUIRED_AGING_FIELDS <= set(cell.keys())
+
+
+# --- dynamic meta (D4): диапазон сезонов и метка данных из данных ----------
+
+def test_season_label_format():
+    assert build.season_label(2026) == "2025–26"
+    assert build.season_label(2000) == "1999–00"
+    assert build.season_label(1950) == "1949–50"
+
+
+def test_build_payload_derives_data_through_from_data():
+    # data_through не задан → берётся метка последнего сезона набора.
+    payload = build.build_payload(_normalized_df(), version="0.1.0")
+    meta = payload["meta"]
+    assert meta["season_min"] == 2037  # 2013 + 24
+    assert meta["season_max"] == 2038  # 2013 + 25
+    assert meta["data_through"] == build.season_label(meta["season_max"])
+
+
+def test_build_payload_meta_includes_season_range():
+    payload = build.build_payload(_normalized_df(), data_through="2023–24")
+    assert payload["meta"]["season_min"] is not None
+    assert payload["meta"]["season_max"] is not None

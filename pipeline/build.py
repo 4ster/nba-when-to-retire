@@ -35,6 +35,11 @@ DEFAULT_METRICS = ("value",)
 DEFAULT_SKILL_COMPONENTS = ("PTS_36", "REB_36", "AST_36", "STL_36", "BLK_36", "FG3_pct", "TS_pct")
 
 
+def season_label(season: int) -> str:
+    """Год окончания сезона → метка диапазона, напр. ``2026`` → ``"2025–26"`` (en-dash)."""
+    return f"{season - 1}–{season % 100:02d}"
+
+
 def _records(df: pd.DataFrame, round_cols: dict[str, int] | None = None) -> list[dict]:
     """DataFrame → список dict с нативными JSON-типами (через round-trip to_json)."""
     out = df.copy()
@@ -47,13 +52,28 @@ def _records(df: pd.DataFrame, round_cols: dict[str, int] | None = None) -> list
 def build_payload(
     df: pd.DataFrame,
     *,
-    data_through: str,
+    data_through: str | None = None,
     version: str = __version__,
     metrics: tuple[str, ...] = DEFAULT_METRICS,
     skill_components: tuple[str, ...] = DEFAULT_SKILL_COMPONENTS,
 ) -> dict:
-    """Собрать payload по контракту §2 из нормализованного DataFrame."""
+    """Собрать payload по контракту §2 из нормализованного DataFrame.
+
+    ``data_through`` и диапазон сезонов выводятся из данных. Если ``data_through``
+    не задан явно — берётся метка последнего сезона (:func:`season_label`),
+    чтобы подпись в UI не «отставала» от датасета.
+    """
     log.debug("build_payload: %d normalized rows", len(df))
+
+    if not df.empty:
+        season_min = int(df["season"].min())
+        season_max = int(df["season"].max())
+    else:
+        season_min = season_max = None
+    if data_through is None:
+        data_through = season_label(season_max) if season_max is not None else "n/a"
+    log.debug("build_payload: seasons %s–%s, data_through=%s",
+              season_min, season_max, data_through)
 
     aging = aging_curve(df, list(metrics))
     surv = survival(df)
@@ -66,6 +86,8 @@ def build_payload(
         "notable": notable(df),
         "meta": {
             "data_through": data_through,
+            "season_min": season_min,
+            "season_max": season_max,
             "version": version,
             "defaults": {
                 "value_metric": "value",
@@ -91,7 +113,7 @@ def build(
     csv_path: str | Path,
     out_path: str | Path,
     *,
-    data_through: str,
+    data_through: str | None = None,
     version: str = __version__,
     column_map: dict[str, str] | None = None,
     dataset: str | None = None,
@@ -126,7 +148,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Сборка слим-JSON по контракту §2")
     parser.add_argument("--data", required=True, help="путь к сырому CSV-датасету")
     parser.add_argument("--out", default="data/aging.json", help="путь для слим-JSON")
-    parser.add_argument("--data-through", required=True, help='метка данных, напр. "2023–24"')
+    parser.add_argument("--data-through", default=None,
+                        help='метка данных, напр. "2025–26"; по умолчанию выводится из данных')
     parser.add_argument("--dataset", default=None, help="адаптер датасета (например drgilermo)")
     parser.add_argument("--version", default=__version__)
     args = parser.parse_args(argv)
