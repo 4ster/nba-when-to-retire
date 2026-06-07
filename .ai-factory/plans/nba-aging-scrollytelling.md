@@ -33,8 +33,8 @@
 - [x] **T1.** Каркас пайплайна и зависимости — `pipeline/` структура, `requirements.txt`, `logging_setup.py` (LOG_LEVEL), конфиг pytest/ruff, `.gitignore`.
 
 ### Фаза 1 — Пайплайн данных (Python, TDD)
-- [ ] **T2.** Тесты: загрузка и нормализация (`tests/test_normalize.py`) — per-36, фильтр ≥1000 мин, бакеты амплуа/эпох.
-- [ ] **T3.** Реализация загрузки и нормализации (`fetch.py`, `transform/normalize.py`) — *blocked by T2*.
+- [x] **T2.** Тесты: загрузка и нормализация (`tests/test_normalize.py`) — per-36, фильтр ≥1000 мин, бакеты амплуа/эпох.
+- [x] **T3.** Реализация загрузки и нормализации (`fetch.py`, `transform/normalize.py`) — *blocked by T2*.
 - [ ] **T4.** Тесты: дельта-метод и `aging_curve` (`tests/test_aging_curve.py`) — год-к-году, коридор, `n`, survivorship.
 - [ ] **T5.** Реализация `aging_curve` дельта-методом (`transform/aging.py`) — *blocked by T4, T3*.
 - [ ] **T6.** Тесты: `survival`, `skill_decline`, `notable` — *(`tests/test_survival.py`, `test_skill_decline.py`, `test_notable.py`)*.
