@@ -58,8 +58,8 @@ RULES/SPEC и новых DESIGN.md/BRIEF.md. Это редизайн **толь�
 - [x] **R11.** US-7 «Тренерский планшет» (`us7-clipboard`): сегмент-контролы, базовая-призрак, сброс — *blocked by R4, R2*.
 
 ### Фаза 3 — Гейт
-- [ ] **R12.** Расширить `tools/verify_dom.mjs` (data-signature, dark default, офлайн, Oswald, нет `--mono`, персистентный канвас, модалка/диапазон) — *blocked by R5–R11*.
-- [ ] **R13.** Гейт приёмки v2: `task test`/check_html/verify_dom/console.assert + бюджеты + ручной чек обеих тем — *blocked by R12*.
+- [x] **R12.** Расширить `tools/verify_dom.mjs` (data-signature, dark default, офлайн, Oswald, нет `--mono`, персистентный канвас, модалка/диапазон) — *blocked by R5–R11*.
+- [x] **R13.** Гейт приёмки v2: `task test`/check_html/verify_dom/console.assert + бюджеты + ручной чек обеих тем — *blocked by R12*.
 
 ---
 
