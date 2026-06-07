@@ -1,0 +1,37 @@
+# --- Производные артефакты пайплайна (регенерируются `task build`) ---
+# data/ — сырьё, промежуточные файлы и слим-JSON (встраивается в index.html)
+data/
+# .app.check.js — временный файл из `task check`
+.app.check.js
+# docs-html/ — HTML-версия документации (`/aif-docs --web`)
+docs-html/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+*.egg-info/
+
+# --- Node (на случай локальных инструментов) ---
+node_modules/
+
+# --- Локальное агент-окружение и переустанавливаемые навыки ---
+# Реконструируются из .ai-factory.json + skills-lock.json
+.agents/
+.claude/skills/
+.claude/agents/
+.claude/settings.local.json
+
+# --- ОС / редакторы ---
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+.idea/
+.vscode/

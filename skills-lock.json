@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "d3-visualization": {
+      "source": "nexu-io/open-design",
+      "sourceType": "github",
+      "skillPath": "skills/d3-visualization/SKILL.md",
+      "computedHash": "43211af4ba0c2a283ce1be06fe45e91b9a87af801720aeadc8ca06f54d280aad"
+    },
+    "pandas-pro": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/pandas-pro/SKILL.md",
+      "computedHash": "244a87c4e9e20aac2822cdd99a221a7fa6999bf1194abbbd4a5e16bde34bf6ef"
+    },
+    "scrollytelling": {
+      "source": "doodledood/claude-code-plugins",
+      "sourceType": "github",
+      "skillPath": "claude-plugins/frontend-design/skills/scrollytelling/SKILL.md",
+      "computedHash": "e168e15a1c7871ec49ca12710b94c5f2228eaf79279b53c77347e1bd9874b9ec"
+    }
+  }
+}
