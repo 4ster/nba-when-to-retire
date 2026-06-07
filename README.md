@@ -17,8 +17,9 @@ task build       # тесты → данные → встраивание JSON �
 task open        # открыть готовый дашборд в браузере
 ```
 
-> Нужны Python 3, Node.js и [Task](https://taskfile.dev). Подробнее —
-> [docs/getting-started.md](docs/getting-started.md).
+> Нужны Python 3, Node.js и [Task](https://taskfile.dev). `task build` требует
+> Kaggle-CSV в `data/players.csv` (см. [docs/getting-started.md](docs/getting-started.md));
+> до этого `index.html` работает на синтетическом seed.
 
 ## Ключевые особенности
 
@@ -61,5 +62,8 @@ Kaggle-датасет → Python-пайплайн (дельта-метод, per-
 
 ## Статус
 
-Контекст настроен, код в разработке: `index.html` и `pipeline/` создаются по фазам
-из `SPEC.md`.
+Реализовано: офлайн-пайплайн данных (Python, 45 тестов — дельта-метод, per-36,
+survival, skill_decline, notable, схема + бюджет) и `index.html` (d3-скроллителлинг:
+7 сцен US-1…US-7, светлая/тёмная темы, песочница). Для реального продукта подставьте
+Kaggle-CSV — см. [Data Pipeline](docs/data-pipeline.md). Пиксельная/интерактивная
+проверка в браузере (Playwright) — после активации MCP.
