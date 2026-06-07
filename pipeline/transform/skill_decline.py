@@ -36,6 +36,9 @@ def skill_decline(df: pd.DataFrame, components: list[str]) -> pd.DataFrame:
         by_age["value_pct"] = by_age["mean"] / peak * 100.0
         by_age["component"] = component
         by_age["n"] = by_age["n"].astype(int)
+        # Убрать возрасты без данных по компоненте (например STL/BLK до 1974 = NaN),
+        # чтобы во фронт не попадали null-точки, рвущие линию.
+        by_age = by_age.dropna(subset=["value_pct"])
         frames.append(by_age[["age", "component", "value_pct", "n"]])
         log.debug("skill_decline[%s]: %d ages, peak=%.3f", component, len(by_age), peak)
 

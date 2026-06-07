@@ -31,8 +31,10 @@ insba_dashboard_contest/
 ├── pipeline/            # офлайн-пайплайн данных на Python (build-time)
 │   ├── logging_setup.py # настройка логирования (LOG_LEVEL)
 │   ├── fetch.py         # загрузка сырого CSV + валидация колонок
+│   ├── datasets.py      # адаптеры датасетов (drgilermo) → контракт §2
 │   ├── schema.py        # валидация контракта §2 + бюджет
 │   ├── build.py         # оркестратор → слим-JSON (CLI)
+│   ├── embed.py         # встраивание слим-JSON в index.html
 │   ├── requirements.txt # зависимости пайплайна
 │   ├── transform/       # normalize, aging, survival, skill_decline, notable
 │   └── tests/           # тесты пайплайна (pytest), пишутся раньше реализации
@@ -57,6 +59,7 @@ insba_dashboard_contest/
 | Команда | Назначение |
 |---------|------------|
 | `task install` | Установить зависимости пайплайна (`pipeline/requirements.txt`) |
+| `task download` | Скачать датасет drgilermo/nba-players-stats (kaggle CLI + токен) |
 | `task test` | Тесты пайплайна (pytest) — TDD-гейт перед фронтом |
 | `task data` | Прогнать пайплайн → слим-JSON `data/aging.json` (+ проверка бюджета) |
 | `task build` | Полная сборка: тесты → данные → встраивание JSON в `index.html` → валидация |

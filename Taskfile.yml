@@ -9,9 +9,10 @@ silent: true
 vars:
   PY: python                      # интерпретатор Python 3
   PIP: python -m pip
-  RAW: data/players.csv           # сырой Kaggle-CSV (положить в data/, см. .gitignore)
+  RAW: data/Seasons_Stats.csv     # сырой Kaggle-CSV (task download кладёт сюда)
+  DATASET: drgilermo              # адаптер датасета (pipeline/datasets.py)
   DATA: data/aging.json           # производный слим-JSON (контракт SPEC.md §2)
-  DATA_THROUGH: "2023–24"         # метка данных в UI; подставить реальный сезон
+  DATA_THROUGH: "2016–17"         # метка данных в UI (последний сезон датасета)
   HTML: index.html                # единственный артефакт рантайма
   BUDGET: 300000                  # бюджет размера слим-JSON, байт (RULES.md)
 
@@ -31,10 +32,15 @@ tasks:
     cmds:
       - '{{.PY}} -m pytest pipeline/tests -q'
 
+  download:
+    desc: Скачать датасет drgilermo/nba-players-stats в data/ (нужны kaggle CLI + токен)
+    cmds:
+      - '{{.PY}} -m kaggle datasets download -d drgilermo/nba-players-stats -p data --unzip'
+
   data:
     desc: Прогнать пайплайн → собрать производный слим-JSON ({{.DATA}})
     cmds:
-      - '{{.PY}} -m pipeline.build --data {{.RAW}} --out {{.DATA}} --data-through "{{.DATA_THROUGH}}"'
+      - '{{.PY}} -m pipeline.build --data {{.RAW}} --out {{.DATA}} --data-through "{{.DATA_THROUGH}}" --dataset {{.DATASET}}'
       - task: budget
 
   budget:

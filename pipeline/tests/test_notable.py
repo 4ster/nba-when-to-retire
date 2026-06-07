@@ -60,6 +60,37 @@ def test_notable_record_series_sorted_with_age_and_value():
     assert {"age", "value"} <= set(rec["series"][0].keys())
 
 
+def test_notable_skips_players_with_all_nan_value():
+    # Игрок только из эпохи без BPM (value=NaN) не должен ни попадать в выборку,
+    # ни ронять idxmax (регрессия реального датасета drgilermo до 1974).
+    rows = _career(1, "Modern", {24: 5, 25: 6, 26: 4})
+    rows += [{"player_id": 2, "name": "OldTimer", "age": a, "value": float("nan")}
+             for a in (30, 31, 32)]
+    recs = nb.notable(pd.DataFrame(rows), longevity=2, early_fade=2)
+    ids = [r["player_id"] for r in recs]
+    assert 2 not in ids
+    assert 1 in ids
+
+
+def test_notable_excludes_right_censored_from_early_fade():
+    # «Ещё активный» (последний сезон = максимуму данных) не должен попадать в early_fade,
+    # даже если пик молодой — это артефакт конца датасета (регрессия Kyrie/Drummond).
+    def career(pid, name, start, end, peak):
+        return [
+            {"player_id": pid, "name": name, "age": 22 + (s - start), "season": s,
+             "value": 9.0 if s == peak else 3.0}
+            for s in range(start, end + 1)
+        ]
+    rows = []
+    rows += career(1, "Faded", 2000, 2003, 2000)        # пик молодой, последний сезон 2003 < max
+    rows += career(2, "StillActive", 2014, 2017, 2014)  # пик молодой, но активен до max=2017
+    df = pd.DataFrame(rows)
+    recs = nb.notable(df, longevity=0, early_fade=2)
+    fade_ids = [r["player_id"] for r in recs if r["kind"] == "early_fade"]
+    assert 1 in fade_ids        # реально угасший
+    assert 2 not in fade_ids    # ещё активный — исключён
+
+
 def test_notable_no_duplicate_players_across_categories():
     recs = nb.notable(_df(), longevity=2, early_fade=2)
     ids = [r["player_id"] for r in recs]

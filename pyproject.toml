@@ -3,6 +3,10 @@ name = "nba-aging-pipeline"
 version = "0.1.0"
 description = "Офлайн-пайплайн данных для дашборда «Игроки NBA: когда пора на пенсию?»"
 requires-python = ">=3.11"
+dependencies = [
+    "kaggle>=2.2.1",
+    "pandas>=3.0.3",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["pipeline/tests"]

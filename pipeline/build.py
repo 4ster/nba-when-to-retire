@@ -17,6 +17,7 @@ from pathlib import Path
 import pandas as pd
 
 from pipeline import __version__, schema
+from pipeline.datasets import DATASET_LOADERS
 from pipeline.fetch import load_raw
 from pipeline.logging_setup import get_logger
 from pipeline.transform import normalize as nz
@@ -93,10 +94,20 @@ def build(
     data_through: str,
     version: str = __version__,
     column_map: dict[str, str] | None = None,
+    dataset: str | None = None,
 ) -> Path:
-    """Полный прогон: CSV → слим-JSON на диск. Возвращает путь записи."""
-    log.info("build: start (data=%s, out=%s)", csv_path, out_path)
-    raw = load_raw(csv_path, column_map=column_map)
+    """Полный прогон: CSV → слим-JSON на диск. Возвращает путь записи.
+
+    :param dataset: имя адаптера из :data:`pipeline.datasets.DATASET_LOADERS`
+                    (например ``"drgilermo"``); если не задан — generic ``fetch.load_raw``.
+    """
+    log.info("build: start (data=%s, out=%s, dataset=%s)", csv_path, out_path, dataset)
+    if dataset:
+        if dataset not in DATASET_LOADERS:
+            raise ValueError(f"unknown dataset {dataset!r}; known: {sorted(DATASET_LOADERS)}")
+        raw = DATASET_LOADERS[dataset](csv_path)
+    else:
+        raw = load_raw(csv_path, column_map=column_map)
     normalized = nz.normalize(raw)
     payload = build_payload(normalized, data_through=data_through, version=version)
 
@@ -116,10 +127,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--data", required=True, help="путь к сырому CSV-датасету")
     parser.add_argument("--out", default="data/aging.json", help="путь для слим-JSON")
     parser.add_argument("--data-through", required=True, help='метка данных, напр. "2023–24"')
+    parser.add_argument("--dataset", default=None, help="адаптер датасета (например drgilermo)")
     parser.add_argument("--version", default=__version__)
     args = parser.parse_args(argv)
 
-    build(args.data, args.out, data_through=args.data_through, version=args.version)
+    build(args.data, args.out, data_through=args.data_through, version=args.version,
+          dataset=args.dataset)
     return 0
 
 

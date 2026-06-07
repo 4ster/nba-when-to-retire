@@ -12,14 +12,20 @@ self-contained `index.html` — открывается двойным клико
 ## Быстрый старт
 
 ```bash
-task install     # зависимости пайплайна (Python)
-task build       # тесты → данные → встраивание JSON в index.html → валидация
-task open        # открыть готовый дашборд в браузере
+task open        # открыть готовый дашборд (данные уже встроены в index.html)
 ```
 
-> Нужны Python 3, Node.js и [Task](https://taskfile.dev). `task build` требует
-> Kaggle-CSV в `data/players.csv` (см. [docs/getting-started.md](docs/getting-started.md));
-> до этого `index.html` работает на синтетическом seed.
+Пересборка из исходных данных:
+
+```bash
+task install     # зависимости пайплайна (Python)
+task download    # скачать датасет drgilermo/nba-players-stats (нужны kaggle CLI + токен)
+task build       # тесты → агрегация → встраивание JSON в index.html → валидация
+```
+
+> `index.html` самодостаточен и уже содержит данные по сезон 2016–17.
+> Для пересборки нужны Python 3, Node.js, [Task](https://taskfile.dev) и Kaggle-доступ
+> (см. [docs/getting-started.md](docs/getting-started.md)).
 
 ## Ключевые особенности
 
@@ -62,8 +68,10 @@ Kaggle-датасет → Python-пайплайн (дельта-метод, per-
 
 ## Статус
 
-Реализовано: офлайн-пайплайн данных (Python, 45 тестов — дельта-метод, per-36,
+Готово на реальных данных (`drgilermo/nba-players-stats`, по сезон 2016–17,
+встроены в `index.html`): офлайн-пайплайн (Python, 62 теста — дельта-метод, per-36,
 survival, skill_decline, notable, схема + бюджет) и `index.html` (d3-скроллителлинг:
-7 сцен US-1…US-7, светлая/тёмная темы, песочница). Для реального продукта подставьте
-Kaggle-CSV — см. [Data Pipeline](docs/data-pipeline.md). Пиксельная/интерактивная
-проверка в браузере (Playwright) — после активации MCP.
+7 сцен US-1…US-7, светлая/тёмная темы, песочница). Результат честен: пик ценности
+≈ 25–26 лет, медиана ухода поздняя, долгожители (Robert Parish, Jason Kidd) против
+рано угасших (Andrew Bynum, Darius Miles). Пиксельная/интерактивная проверка в
+браузере (Playwright) — после активации MCP.

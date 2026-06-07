@@ -35,3 +35,6 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
+
+# токен kaggle
+.kaggle/access_token

@@ -26,11 +26,13 @@ def _career_stats(df: pd.DataFrame) -> pd.DataFrame:
     for pid, g in df.groupby("player_id"):
         g_sorted = g.sort_values("age")
         peak_age = int(g_sorted.loc[g_sorted["value"].idxmax(), "age"])
+        last_season = int(g_sorted["season"].max()) if "season" in g_sorted.columns else None
         rows.append({
             "player_id": int(pid),
             "name": str(g_sorted["name"].iloc[0]),
             "n_seasons": int(len(g_sorted)),
             "peak_age": peak_age,
+            "last_season": last_season,
         })
     return pd.DataFrame(rows)
 
@@ -60,6 +62,12 @@ def notable(
     min_seasons_fade: int = MIN_SEASONS_FADE,
 ) -> list[dict]:
     """Отобрать долгожителей и рано угасших как индивидуальные ряды."""
+    # notable строится по траекториям value — строки без value бесполезны и ломают
+    # idxmax (карьеры до эпохи продвинутых метрик: BPM = NaN).
+    df = df[df["value"].notna()]
+    if df.empty:
+        log.warning("notable: нет строк с непустым value")
+        return []
     stats = _career_stats(df)
 
     long_ids = (
@@ -71,6 +79,12 @@ def notable(
     fade_pool = stats[
         (stats["n_seasons"] >= min_seasons_fade) & (~stats["player_id"].isin(selected))
     ]
+    # Исключить ещё активных (right-censored): их последний сезон = последнему в данных,
+    # поэтому «молодой пик» — артефакт конца датасета, а не раннее угасание.
+    max_season = int(df["season"].max()) if "season" in df.columns else None
+    if max_season is not None:
+        fade_pool = fade_pool[fade_pool["last_season"] < max_season]
+
     fade_ids = (
         fade_pool.sort_values(["peak_age", "player_id"], ascending=[True, True])
         .head(early_fade)["player_id"].tolist()
