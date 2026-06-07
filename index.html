@@ -214,6 +214,7 @@
     initMeta();
     initTheme();
     initScrolly();
+    initSandbox();
 
     function showDataError(err) {
       var box = document.getElementById("data-error");
@@ -554,6 +555,88 @@
         case "us5": sceneOutliers(); break;
         case "us6": sceneCliff(); break;
         default: stubScene(scene);
+      }
+    }
+
+    // ── US-7: песочница (фильтры пересобирают кривую; средняя остаётся для сравнения) ──
+    function makeSelect(labelText, options, value, onChange) {
+      var wrap = document.createElement("label");
+      wrap.style.cssText = "display:inline-flex;flex-direction:column;gap:0.25rem;font-size:0.8rem;color:var(--muted)";
+      wrap.appendChild(document.createTextNode(labelText));
+      var sel = document.createElement("select");
+      sel.style.cssText = "font:inherit;padding:0.3rem 0.5rem;background:var(--surface);color:var(--fg);border:1px solid var(--hair);border-radius:6px";
+      options.forEach(function (o) {
+        var opt = document.createElement("option");
+        opt.value = o[0]; opt.textContent = o[1];
+        if (o[0] === value) { opt.selected = true; }
+        sel.appendChild(opt);
+      });
+      sel.addEventListener("change", function () { onChange(sel.value); });
+      wrap.appendChild(sel);
+      wrap.selectEl = sel;
+      return wrap;
+    }
+
+    function initSandbox() {
+      var controls = document.getElementById("sandbox-controls");
+      var chartHost = document.getElementById("sandbox-chart");
+      if (!controls || !chartHost) { return; }
+      if (!valueCells().length) { chartHost.textContent = "Данные появятся после сборки (task build)"; return; }
+
+      // Домены опций — из ПОЛНОГО набора (стабильная палитра/набор, RULES.md §«Цвет»).
+      var metrics = Array.from(new Set((data.aging_curve || []).map(function (c) { return c.metric; })));
+      var posOpts = [["all", "все"], ["guard", "защитники"], ["wing", "винги"], ["big", "большие"]];
+      var eraOpts = [["all", "все"]].concat(ERAS.map(function (e) { return [e.key, e.key]; }));
+
+      var state = { pos: "all", era: "all", metric: metrics[0] };
+      try {
+        var saved = JSON.parse(localStorage.getItem("nba-sandbox")); // SPEC §5: localStorage только тут
+        if (saved && metrics.indexOf(saved.metric) >= 0) { state = Object.assign(state, saved); }
+      } catch (e) { /* нет сохранённого сценария — ок */ }
+
+      var posCtl = makeSelect("Амплуа", posOpts, state.pos, function (v) { state.pos = v; update(); });
+      var eraCtl = makeSelect("Эпоха", eraOpts, state.era, function (v) { state.era = v; update(); });
+      controls.innerHTML = "";
+      controls.appendChild(posCtl);
+      controls.appendChild(eraCtl);
+      var metricCtl = null;
+      if (metrics.length > 1) {
+        metricCtl = makeSelect("Метрика", metrics.map(function (m) { return [m, m]; }), state.metric,
+          function (v) { state.metric = v; update(); });
+        controls.appendChild(metricCtl);
+      }
+      var resetBtn = document.createElement("button");
+      resetBtn.type = "button"; resetBtn.textContent = "Сбросить";
+      resetBtn.style.cssText = "align-self:flex-end;font:inherit;cursor:pointer;padding:0.35rem 0.7rem;background:var(--surface);color:var(--fg);border:1px solid var(--hair);border-radius:6px";
+      resetBtn.addEventListener("click", function () {
+        state = { pos: "all", era: "all", metric: metrics[0] };
+        posCtl.selectEl.value = "all"; eraCtl.selectEl.value = "all";
+        if (metricCtl) { metricCtl.selectEl.value = metrics[0]; }
+        update();
+      });
+      controls.appendChild(resetBtn);
+
+      update();
+
+      function update() {
+        try { localStorage.setItem("nba-sandbox", JSON.stringify(state)); } catch (e) { /* ок */ }
+        var all = valueCells().filter(function (c) { return c.metric === state.metric; });
+        var base = reconstructLevel(aggregateByAge(all));   // средняя по всем — для сравнения
+        var sel = all.filter(function (c) {
+          return (state.pos === "all" || c.position_group === state.pos)
+            && (state.era === "all" || c.era_bucket === state.era);
+        });
+        var selLevel = reconstructLevel(aggregateByAge(sel));
+        // Цвет выбора стабилен: по амплуа, иначе акцент.
+        var selColor = state.pos !== "all" ? cssVar(POSITION_VARS[state.pos]) : cssVar("--c-era-modern");
+
+        chartHost.innerHTML = "";
+        var svg = baseSvg(chartHost, "Ценность (BPM) по возрасту — выбор против средней");
+        var series = [{ key: "base", label: "средняя", color: cssVar("--muted"), width: 1.5, points: base }];
+        if (selLevel.length > 1) {
+          series.push({ key: "sel", label: "выбор", color: selColor, width: 2.8, points: selLevel });
+        }
+        drawLevelChart(svg, series, { band: false, directLabels: true });
       }
     }
   })();
