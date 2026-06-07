@@ -467,6 +467,78 @@
       drawLevelChart(svg, seriesList, { band: false, directLabels: true });
     }
 
+    // ── US-5: выбросы (именованные траектории на фоне уровня лиги) ──
+    function sceneOutliers() {
+      var host = clearChart(); if (!host) { return; }
+      var notable = (data.notable || []).filter(function (s) { return s.series && s.series.length > 1; });
+      if (!notable.length) { emptyNote(host, "Данные появятся после сборки (task build)"); return; }
+      var svg = baseSvg(host, "Ценность (BPM) по возрасту — долгожители и рано угасшие");
+      var iw = VB_W - MARGIN.left - MARGIN.right, ih = VB_H - MARGIN.top - MARGIN.bottom;
+      var g = svg.append("g").attr("transform", "translate(" + MARGIN.left + "," + MARGIN.top + ")");
+      var allPts = notable.reduce(function (a, s) { return a.concat(s.series); }, []);
+      var x = d3.scaleLinear().domain(d3.extent(allPts, function (d) { return d.age; })).range([0, iw]);
+      var y = d3.scaleLinear()
+        .domain(d3.extent(allPts.map(function (d) { return d.value; }).concat([0]))).nice().range([ih, 0]);
+      // Опорная линия «уровень лиги» (BPM 0) — заменяет «среднюю полосу».
+      g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(0)).attr("y2", y(0))
+        .attr("stroke", cssVar("--hair"));
+      g.append("text").attr("x", 0).attr("y", y(0) - 4).attr("fill", cssVar("--muted"))
+        .attr("font-size", 10).text("уровень лиги (BPM 0)");
+      g.selectAll("text.xt").data(x.ticks(6)).enter().append("text")
+        .attr("x", function (d) { return x(d); }).attr("y", ih + 24).attr("text-anchor", "middle")
+        .attr("fill", cssVar("--muted")).attr("font-size", 11).text(function (d) { return d; });
+      var line = d3.line().x(function (d) { return x(d.age); }).y(function (d) { return y(d.value); })
+        .curve(d3.curveMonotoneX);
+      notable.forEach(function (s) {
+        var col = s.kind === "early_fade" ? cssVar("--c-big") : cssVar("--c-era-modern");
+        g.append("path").datum(s.series).attr("fill", "none").attr("stroke", col)
+          .attr("stroke-width", 2.2).attr("d", line);
+        var last = s.series[s.series.length - 1];
+        g.append("text").attr("x", x(last.age) + 6).attr("y", y(last.value)).attr("dy", "0.32em")
+          .attr("fill", col).attr("font-size", 11).attr("font-weight", 600).text(s.name);
+      });
+    }
+
+    // ── US-6: обрыв (доля активных по возрасту, медиана ухода) ──
+    function sceneCliff() {
+      var host = clearChart(); if (!host) { return; }
+      var surv = (data.survival || []).slice().sort(function (a, b) { return a.age - b.age; });
+      if (!surv.length) { emptyNote(host, "Данные появятся после сборки (task build)"); return; }
+      var svg = baseSvg(host, "Доля игроков, ещё активных в следующем сезоне, по возрасту");
+      var iw = VB_W - MARGIN.left - MARGIN.right, ih = VB_H - MARGIN.top - MARGIN.bottom;
+      var g = svg.append("g").attr("transform", "translate(" + MARGIN.left + "," + MARGIN.top + ")");
+      var x = d3.scaleLinear().domain(d3.extent(surv, function (d) { return d.age; })).range([0, iw]);
+      var y = d3.scaleLinear().domain([0, 1]).range([ih, 0]);
+      var area = d3.area().x(function (d) { return x(d.age); }).y0(ih).y1(function (d) { return y(d.survival); })
+        .curve(d3.curveMonotoneX);
+      g.append("path").datum(surv).attr("fill", cssVar("--band")).attr("d", area);
+      var line = d3.line().x(function (d) { return x(d.age); }).y(function (d) { return y(d.survival); })
+        .curve(d3.curveMonotoneX);
+      g.append("path").datum(surv).attr("fill", "none").attr("stroke", cssVar("--fg"))
+        .attr("stroke-width", 2.2).attr("d", line);
+      g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(0.5)).attr("y2", y(0.5))
+        .attr("stroke", cssVar("--hair")).attr("stroke-dasharray", "2,2");
+      g.selectAll("text.xt").data(x.ticks(6)).enter().append("text")
+        .attr("x", function (d) { return x(d); }).attr("y", ih + 24).attr("text-anchor", "middle")
+        .attr("fill", cssVar("--muted")).attr("font-size", 11).text(function (d) { return d; });
+      // Медиана ухода: возраст, где доля активных пересекает 0.5 (линейная интерполяция).
+      var med = null;
+      for (var i = 1; i < surv.length; i++) {
+        if (surv[i - 1].survival >= 0.5 && surv[i].survival < 0.5) {
+          var t = (0.5 - surv[i - 1].survival) / (surv[i].survival - surv[i - 1].survival);
+          med = surv[i - 1].age + t * (surv[i].age - surv[i - 1].age);
+          break;
+        }
+      }
+      if (med != null) {
+        g.append("line").attr("x1", x(med)).attr("x2", x(med)).attr("y1", 0).attr("y2", ih)
+          .attr("stroke", cssVar("--c-big")).attr("stroke-dasharray", "3,3");
+        g.append("text").attr("x", x(med)).attr("y", -6).attr("text-anchor", "middle")
+          .attr("fill", cssVar("--c-big")).attr("font-size", 12).attr("font-weight", 600)
+          .text("медиана ухода ≈ " + med.toFixed(0));
+      }
+    }
+
     function stubScene(scene) {
       var host = clearChart(); if (!host) { return; }
       emptyNote(host, "Сцена " + scene.toUpperCase() + " — скоро");
@@ -479,6 +551,8 @@
         case "us2": sceneByPosition(); break;
         case "us3": sceneSkillDecline(); break;
         case "us4": sceneEras(); break;
+        case "us5": sceneOutliers(); break;
+        case "us6": sceneCliff(); break;
         default: stubScene(scene);
       }
     }
