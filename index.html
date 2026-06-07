@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Игроки NBA: когда пора на пенсию?</title>
-  <!-- CDN с зафиксированными версиями (RULES.md §«Сборка»), без @latest -->
+  <!-- CDN с зафиксированными версиями (RULES.md §«Сборка»); плавающие теги не используются -->
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
     integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i"
     crossorigin="anonymous"></script>
@@ -172,7 +172,7 @@
 
     <section id="sandbox">
       <h2>Песочница</h2>
-      <p>Крутите фильтры — кривая пересобирается (появится на шаге T15).</p>
+      <p>Крутите фильтры — кривая пересобирается; средняя по всем данным остаётся для сравнения.</p>
       <div class="controls" id="sandbox-controls"></div>
       <div id="sandbox-chart"></div>
     </section>
@@ -211,10 +211,8 @@
       return;
     }
 
-    initMeta();
-    initTheme();
-    initScrolly();
-    initSandbox();
+    var currentScene = "us1";
+    var scroller = null;
 
     function showDataError(err) {
       var box = document.getElementById("data-error");
@@ -243,9 +241,6 @@
         rerenderActiveScene();
       });
     }
-
-    var currentScene = "us1";
-    var scroller = null;
 
     function initScrolly() {
       renderScene(currentScene);
@@ -639,6 +634,12 @@
         drawLevelChart(svg, series, { band: false, directLabels: true });
       }
     }
+
+    // Запуск после объявления всех функций и var-констант (избегаем hoisting-ловушек).
+    initMeta();
+    initTheme();
+    initScrolly();
+    initSandbox();
   })();
   </script>
 </body>
