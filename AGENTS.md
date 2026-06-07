@@ -26,11 +26,15 @@ insba_dashboard_contest/
 ├── RULES.md             # Enforceable-аксиомы (гейт /aif-verify, /aif-review)
 ├── PROMPT.md            # Постановка задачи, фазы, дефолты §7
 ├── pyproject.toml       # конфиг pytest + ruff
-├── index.html           # (будет) единственный артефакт рантайма
+├── index.html           # единственный артефакт рантайма (каркас: темы, seed, сцены)
+├── tools/               # build-утилиты (check_html.mjs — гейт JS-блока)
 ├── pipeline/            # офлайн-пайплайн данных на Python (build-time)
 │   ├── logging_setup.py # настройка логирования (LOG_LEVEL)
+│   ├── fetch.py         # загрузка сырого CSV + валидация колонок
+│   ├── schema.py        # валидация контракта §2 + бюджет
+│   ├── build.py         # оркестратор → слим-JSON (CLI)
 │   ├── requirements.txt # зависимости пайплайна
-│   ├── transform/       # нормализация и агрегаты (создаются по фазам)
+│   ├── transform/       # normalize, aging, survival, skill_decline, notable
 │   └── tests/           # тесты пайплайна (pytest), пишутся раньше реализации
 ├── references/          # Внешние референсы (дизайн-примеры)
 └── .ai-factory/         # Контекст AI Factory (config, rules, architecture)

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Игроки NBA: когда пора на пенсию?</title>
+  <!-- CDN с зафиксированными версиями (RULES.md §«Сборка»), без @latest -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
+    integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/scrollama@3.2.0/build/scrollama.min.js"
+    integrity="sha384-trt5UkaI73mRdcngswspDe4cRMaS9HcWgFr+IgtdUGBbsS4/9FF7MDIX7xl+O9zI"
+    crossorigin="anonymous"></script>
+  <style>
+    /* ── Токены тем (theme-aware, семантические) ── */
+    :root {
+      --bg: #fbfbf9;
+      --surface: #ffffff;
+      --fg: #1a1a1a;
+      --muted: #6b6b6b;
+      --hair: #e4e4e0;
+      --accent: #111111;
+      --label: #1a1a1a;            /* подпись: тёмная на светлой теме */
+      /* семантика амплуа */
+      --c-guard: #2563eb;
+      --c-wing: #d97706;
+      --c-big: #b91c1c;
+      /* семантика эпох */
+      --c-era-pre: #9ca3af;
+      --c-era-mid: #6366f1;
+      --c-era-modern: #0ea5a4;
+      --band: rgba(0,0,0,0.08);    /* доверительный коридор */
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    [data-theme="dark"] {
+      --bg: #0f1115;
+      --surface: #161922;
+      --fg: #ececec;
+      --muted: #9aa0aa;
+      --hair: #2a2e38;
+      --accent: #f3f4f6;
+      --label: #f3f4f6;            /* авто-контраст: светлая на тёмной теме */
+      --c-guard: #60a5fa;
+      --c-wing: #fbbf24;
+      --c-big: #f87171;
+      --c-era-pre: #9ca3af;
+      --c-era-mid: #a5b4fc;
+      --c-era-modern: #2dd4bf;
+      --band: rgba(255,255,255,0.10);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Шапка ── */
+    .site-header {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: baseline; gap: 1rem;
+      padding: 0.75rem 1.25rem;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--hair);
+    }
+    .site-header .brand { font-weight: 700; letter-spacing: -0.01em; }
+    .site-header .meta-line { color: var(--muted); font-size: 0.85rem; }
+    .site-header .spacer { flex: 1; }
+    #theme-toggle {
+      font: inherit; cursor: pointer; line-height: 1;
+      background: var(--surface); color: var(--fg);
+      border: 1px solid var(--hair); border-radius: 999px;
+      padding: 0.35rem 0.7rem;
+    }
+    #theme-toggle:focus-visible { outline: 2px solid var(--c-era-mid); outline-offset: 2px; }
+
+    /* ── Интро ── */
+    .intro {
+      max-width: 40rem; margin: 0 auto; padding: 4rem 1.25rem 2rem;
+    }
+    .intro h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 1rem; }
+    .intro .lede { font-size: 1.15rem; color: var(--muted); }
+    .intro .takeaway { margin-top: 1.5rem; padding-left: 1rem; border-left: 3px solid var(--c-era-modern); }
+
+    /* ── Скроллителлинг ── */
+    .scrolly { position: relative; display: grid; grid-template-columns: 1fr; }
+    .sticky-graphic {
+      position: sticky; top: 4rem; height: 80vh; margin: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #chart { width: 100%; height: 100%; }
+    .steps { position: relative; max-width: 34rem; margin: 0 auto; padding: 0 1.25rem; }
+    .step {
+      min-height: 78vh; display: flex; align-items: center;
+    }
+    .step > .card {
+      background: var(--surface); border: 1px solid var(--hair); border-radius: 10px;
+      padding: 1.25rem 1.4rem; opacity: 0.45; transition: opacity 0.3s ease;
+    }
+    .step.is-active > .card { opacity: 1; }
+    .step h2 { margin: 0 0 0.5rem; font-size: 1.2rem; }
+    .step p { margin: 0; color: var(--fg); }
+
+    @media (min-width: 56rem) {
+      .scrolly { grid-template-columns: 1.1fr 1fr; }
+      .sticky-graphic { grid-column: 1; order: 1; }
+      .steps { grid-column: 2; order: 2; margin: 0; }
+    }
+
+    /* ── Песочница ── */
+    #sandbox { max-width: 60rem; margin: 4rem auto; padding: 0 1.25rem 6rem; }
+    #sandbox h2 { font-size: 1.4rem; }
+    .controls { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0; }
+
+    /* ── Ошибка данных ── */
+    #data-error {
+      max-width: 40rem; margin: 4rem auto; padding: 1.25rem 1.4rem;
+      border: 1px solid var(--c-big); border-radius: 10px; color: var(--c-big);
+    }
+
+    /* ── Доступность: уважать prefers-reduced-motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; scroll-behavior: auto !important; animation: none !important; }
+    }
+    .visually-hidden {
+      position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <span class="brand">Игроки NBA: когда пора на пенсию?</span>
+    <span class="meta-line">данные по сезон <span id="data-through">—</span></span>
+    <span class="spacer"></span>
+    <button id="theme-toggle" type="button" title="Переключить тему" aria-label="Переключить светлую/тёмную тему">◐ Тема</button>
+  </header>
+
+  <main>
+    <section class="intro">
+      <h1>Когда игрок NBA выходит на пик — и когда пора на пенсию?</h1>
+      <p class="lede">Возрастные кривые игроков, построенные честно: по изменению результата
+        год‑к‑году у одного игрока, на скоростных метриках, с поправкой на «выживших».</p>
+      <p class="takeaway">Пик ≈ 26–28 лет, дальше спад; большие сваливаются раньше защитников;
+        современные карьеры длиннее. Листайте — разберём по сценам.</p>
+    </section>
+
+    <div class="scrolly" id="scrolly">
+      <figure class="sticky-graphic">
+        <div id="chart" role="img" aria-label="График возрастной кривой (меняется по мере прокрутки)"></div>
+      </figure>
+      <div class="steps">
+        <div class="step" data-scene="us1"><div class="card"><h2>Средняя кривая</h2>
+          <p>Единая кривая «ценность × возраст»: где пик и какой формы спад.</p></div></div>
+        <div class="step" data-scene="us2"><div class="card"><h2>По амплуа</h2>
+          <p>Защитники, винги и большие: кто сваливается раньше.</p></div></div>
+        <div class="step" data-scene="us3"><div class="card"><h2>Что умирает первым</h2>
+          <p>Порядок угасания навыков, нормированный к пику.</p></div></div>
+        <div class="step" data-scene="us4"><div class="card"><h2>Эпохи</h2>
+          <p>Современные кривые длиннее и выше в хвосте.</p></div></div>
+        <div class="step" data-scene="us5"><div class="card"><h2>Выбросы</h2>
+          <p>Долгожители против рано сгоревших на фоне средней.</p></div></div>
+        <div class="step" data-scene="us6"><div class="card"><h2>Обрыв</h2>
+          <p>Когда и как резко игроки уходят из лиги.</p></div></div>
+      </div>
+    </div>
+
+    <section id="sandbox">
+      <h2>Песочница</h2>
+      <p>Крутите фильтры — кривая пересобирается (появится на шаге T15).</p>
+      <div class="controls" id="sandbox-controls"></div>
+      <div id="sandbox-chart"></div>
+    </section>
+
+    <div id="data-error" hidden>
+      <strong>Не удалось загрузить данные.</strong>
+      <span id="data-error-detail"></span>
+    </div>
+  </main>
+
+  <!-- Производные данные по контракту SPEC.md §2; заполняется pipeline/embed.py -->
+  <script id="seed-data" type="application/json">{"aging_curve":[],"survival":[],"skill_decline":[],"notable":[],"meta":{"data_through":"—","version":"0","defaults":{}}}</script>
+
+  <!-- Один JS-блок (RULES.md §«Сборка») -->
+  <script id="app">
+  "use strict";
+  (function () {
+    // Подписи групп амплуа (семантика) и сопоставление с CSS-токенами.
+    var POSITION_LABELS = { guard: "защитники", wing: "винги", big: "большие" };
+    var POSITION_VARS = { guard: "--c-guard", wing: "--c-wing", big: "--c-big" };
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+    function prefersReducedMotion() {
+      return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    // ── Данные: парсинг встроенного seed строго в try/catch ──
+    var data = null;
+    try {
+      var seedEl = document.getElementById("seed-data");
+      data = JSON.parse(seedEl.textContent);
+    } catch (err) {
+      showDataError(err);
+      return;
+    }
+
+    initMeta();
+    initTheme();
+    initScrolly();
+
+    function showDataError(err) {
+      var box = document.getElementById("data-error");
+      var detail = document.getElementById("data-error-detail");
+      if (detail) { detail.textContent = err && err.message ? err.message : String(err); }
+      if (box) { box.hidden = false; }
+      var scrolly = document.getElementById("scrolly");
+      if (scrolly) { scrolly.style.display = "none"; }
+      if (window.console) { console.error("seed-data parse failed:", err); }
+    }
+
+    function initMeta() {
+      var el = document.getElementById("data-through");
+      var through = data && data.meta ? data.meta.data_through : null;
+      if (el && through) { el.textContent = through; }
+    }
+
+    function initTheme() {
+      var btn = document.getElementById("theme-toggle");
+      if (!btn) { return; }
+      // Тему НЕ персистим в localStorage (SPEC.md §5: localStorage только для сценария песочницы).
+      btn.addEventListener("click", function () {
+        var root = document.documentElement;
+        var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", next);
+        rerenderActiveScene();
+      });
+    }
+
+    var currentScene = "us1";
+    var scroller = null;
+
+    function initScrolly() {
+      renderScene(currentScene);
+      if (!window.scrollama) {
+        if (window.console) { console.warn("scrollama unavailable; scenes will not switch on scroll"); }
+        return;
+      }
+      scroller = window.scrollama();
+      scroller
+        .setup({ step: ".step", offset: 0.6 })
+        .onStepEnter(function (resp) {
+          var steps = document.querySelectorAll(".step");
+          for (var i = 0; i < steps.length; i++) { steps[i].classList.remove("is-active"); }
+          resp.element.classList.add("is-active");
+          var scene = resp.element.getAttribute("data-scene");
+          if (scene) { currentScene = scene; renderScene(scene); }
+        });
+      window.addEventListener("resize", function () { if (scroller) { scroller.resize(); } });
+    }
+
+    function rerenderActiveScene() { renderScene(currentScene); }
+
+    // ── Диспетчер сцен. Реальные графики — T12–T15; пока заглушки. ──
+    function renderScene(scene) {
+      var host = document.getElementById("chart");
+      if (!host) { return; }
+      host.innerHTML = "";
+      var svg = d3.select(host).append("svg")
+        .attr("width", "100%").attr("height", "100%")
+        .attr("viewBox", "0 0 600 400").attr("preserveAspectRatio", "xMidYMid meet");
+      svg.append("text")
+        .attr("x", 300).attr("y", 200).attr("text-anchor", "middle")
+        .attr("fill", cssVar("--label"))
+        .attr("font-family", cssVar("--font"))
+        .attr("font-size", 18)
+        .text("Сцена " + scene.toUpperCase() + " — график появится здесь");
+    }
+  })();
+  </script>
+</body>
+</html>
