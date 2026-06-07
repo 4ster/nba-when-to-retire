@@ -72,10 +72,10 @@ def aging_curve(df: pd.DataFrame, metrics: list[str]) -> pd.DataFrame:
         ).reset_index()
         agg = agg.rename(columns={"mean": "value", "count": "n", "std": "_sd"})
 
-        se = agg["_sd"] / np.sqrt(agg["n"])
-        has_spread = agg["n"] >= 2
-        agg["ci_low"] = np.where(has_spread, agg["value"] - Z95 * se, agg["value"])
-        agg["ci_high"] = np.where(has_spread, agg["value"] + Z95 * se, agg["value"])
+        # se=0 при n<2 (std=NaN) → коридор схлопывается в value, без NaN-арифметики.
+        se = (agg["_sd"] / np.sqrt(agg["n"])).fillna(0.0)
+        agg["ci_low"] = agg["value"] - Z95 * se
+        agg["ci_high"] = agg["value"] + Z95 * se
         agg["metric"] = metric
         agg["n"] = agg["n"].astype(int)
 

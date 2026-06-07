@@ -213,6 +213,7 @@
 
     var currentScene = "us1";
     var scroller = null;
+    var sandboxRerender = null;   // хук перерисовки песочницы (ставится в initSandbox)
 
     function showDataError(err) {
       var box = document.getElementById("data-error");
@@ -239,6 +240,7 @@
         var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
         root.setAttribute("data-theme", next);
         rerenderActiveScene();
+        if (sandboxRerender) { sandboxRerender(); }   // тема не должна ломать контраст песочницы
       });
     }
 
@@ -611,6 +613,7 @@
       });
       controls.appendChild(resetBtn);
 
+      sandboxRerender = update;
       update();
 
       function update() {

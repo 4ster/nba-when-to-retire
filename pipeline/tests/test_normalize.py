@@ -110,6 +110,28 @@ def test_position_group_mapping(pos, expected):
     assert nz.position_group(pos) == expected
 
 
+@pytest.mark.parametrize(
+    "pos,expected",
+    [
+        ("G", nz.GROUP_GUARD),
+        ("F", nz.GROUP_WING),
+        ("C", nz.GROUP_BIG),
+        ("G-F", nz.GROUP_GUARD),     # первый токен → G
+        ("PG-SG", nz.GROUP_GUARD),
+        ("F-C", nz.GROUP_WING),      # первый токен → F
+        ("pg", nz.GROUP_GUARD),      # регистр
+    ],
+)
+def test_position_group_handles_combined_and_short_codes(pos, expected):
+    assert nz.position_group(pos) == expected
+
+
+@pytest.mark.parametrize("pos", ["", "X", "???", None])
+def test_position_group_falls_back_instead_of_raising(pos):
+    # Нераспознанное амплуа не роняет билд — возвращает группу по умолчанию.
+    assert nz.position_group(pos) == nz._POSITION_FALLBACK
+
+
 def test_normalize_adds_position_group_column():
     df = nz.normalize(_raw_df([_raw_row(pos="C")]))
     assert df.iloc[0]["position_group"] == nz.GROUP_BIG

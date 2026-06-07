@@ -11,6 +11,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 
 from pipeline.logging_setup import get_logger
@@ -25,13 +27,16 @@ GROUP_GUARD = "guard"
 GROUP_WING = "wing"
 GROUP_BIG = "big"
 
+# Маппинг кодов амплуа в группы. Покрывает и составные/краткие коды реальных
+# датасетов (G, F, G-F, PG-SG, F-C): берём первый токен до разделителя.
 _POSITION_MAP = {
-    "PG": GROUP_GUARD,
-    "SG": GROUP_GUARD,
-    "SF": GROUP_WING,
-    "PF": GROUP_BIG,
-    "C": GROUP_BIG,
+    "PG": GROUP_GUARD, "SG": GROUP_GUARD, "G": GROUP_GUARD,
+    "SF": GROUP_WING, "GF": GROUP_WING, "F": GROUP_WING,
+    "PF": GROUP_BIG, "FC": GROUP_BIG, "C": GROUP_BIG,
 }
+
+#: Группа по умолчанию для нераспознанного амплуа (середина спектра).
+_POSITION_FALLBACK = GROUP_WING
 
 #: Бакеты эпох (границы SPEC.md §7).
 ERA_PRE = "≤1989"
@@ -67,11 +72,21 @@ def to_per36(value: float, minutes: float) -> float:
 
 
 def position_group(pos: str) -> str:
-    """Свернуть амплуа (PG/SG/SF/PF/C) в группу guard/wing/big."""
-    key = (pos or "").strip().upper()
-    if key not in _POSITION_MAP:
-        raise ValueError(f"unknown position {pos!r}")
-    return _POSITION_MAP[key]
+    """Свернуть амплуа в группу guard/wing/big.
+
+    Робастно к составным/кратким кодам (``G``, ``F``, ``G-F``, ``PG-SG``, ``F-C``):
+    сначала пробуем полный код, затем первый токен до разделителя ``-``/``/``/пробел.
+    Нераспознанное амплуа не роняет билд — fallback на :data:`_POSITION_FALLBACK`
+    с предупреждением.
+    """
+    raw = (pos or "").strip().upper()
+    if raw in _POSITION_MAP:
+        return _POSITION_MAP[raw]
+    primary = re.split(r"[-/ ]", raw)[0] if raw else ""
+    if primary in _POSITION_MAP:
+        return _POSITION_MAP[primary]
+    log.warning("unknown position %r → fallback %s", pos, _POSITION_FALLBACK)
+    return _POSITION_FALLBACK
 
 
 def era_bucket(season: int) -> str:
