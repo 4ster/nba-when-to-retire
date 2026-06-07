@@ -26,12 +26,13 @@ insba_dashboard_contest/
 ├── RULES.md             # Enforceable-аксиомы (гейт /aif-verify, /aif-review)
 ├── PROMPT.md            # Постановка задачи, фазы, дефолты §7
 ├── pyproject.toml       # конфиг pytest + ruff
-├── index.html           # единственный артефакт рантайма (каркас: темы, seed, сцены)
-├── tools/               # build-утилиты (check_html.mjs — гейт JS-блока)
+├── index.html           # единственный артефакт рантайма (каркас: темы, seed, сцены, модалка)
+├── package.json         # Node-инструменты сборки/проверки (jsdom, d3) — devDependencies
+├── tools/               # build-утилиты: check_html.mjs (гейт JS-блока), verify_dom.mjs (jsdom)
 ├── pipeline/            # офлайн-пайплайн данных на Python (build-time)
 │   ├── logging_setup.py # настройка логирования (LOG_LEVEL)
 │   ├── fetch.py         # загрузка сырого CSV + валидация колонок
-│   ├── datasets.py      # адаптеры датасетов (drgilermo) → контракт §2
+│   ├── datasets.py      # адаптеры датасетов (sumitrodatta, drgilermo) → контракт §2
 │   ├── schema.py        # валидация контракта §2 + бюджет
 │   ├── build.py         # оркестратор → слим-JSON (CLI)
 │   ├── embed.py         # встраивание слим-JSON в index.html
@@ -58,15 +59,16 @@ insba_dashboard_contest/
 
 | Команда | Назначение |
 |---------|------------|
-| `task install` | Установить зависимости пайплайна (`pipeline/requirements.txt`) |
-| `task download` | Скачать датасет drgilermo/nba-players-stats (kaggle CLI + токен) |
+| `task install` | Зависимости пайплайна (`pipeline/requirements.txt`) + Node-инструментов (`npm install`) |
+| `task download` | Скачать датасет sumitrodatta/nba-aba-baa-stats в `data/sumitro` (kaggle CLI + токен) |
 | `task test` | Тесты пайплайна (pytest) — TDD-гейт перед фронтом |
 | `task data` | Прогнать пайплайн → слим-JSON `data/aging.json` (+ проверка бюджета) |
 | `task build` | Полная сборка: тесты → данные → встраивание JSON в `index.html` → валидация |
 | `task check` | `node --check` JS-блока (`id="app"`) + проверка null-байтов |
+| `task verify` | Браузерная проверка (jsdom): подзаголовок-диапазон + модалка/a11y + 0 ошибок |
 | `task open` | Открыть `index.html` в браузере |
 | `task clean` | Удалить производные артефакты |
-| `task ci` | Полный прогон (= `build`) |
+| `task ci` | Полный прогон (`build` + `verify`) |
 
 ## Документация
 

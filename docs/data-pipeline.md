@@ -15,10 +15,21 @@
 
 ## Источник
 
-- Kaggle: **`drgilermo/nba-players-stats`** → `Seasons_Stats.csv` (1950–2017). Скачивание —
-  `task download`; адаптер `pipeline/datasets.py` приводит к контракту §2.
-- Адаптер: дедуп обменянных игроков (строка `TOT`), `player_id` из имени (`factorize`),
-  `active_next` по присутствию в следующем сезоне, `value` = `BPM`.
+- Kaggle: **`sumitrodatta/nba-aba-baa-stats`** (Basketball-Reference, лицензия CC0;
+  поддерживается, обновляется). Скачивание — `task download` в каталог `data/sumitro`;
+  адаптер `load_sumitrodatta` (`pipeline/datasets.py`) приводит к контракту §2.
+- Используются **только сезоны NBA** (ABA/BAA отбрасываются) → охват 1952–2026.
+- Источник склеивает два файла: `Advanced.csv` (`bpm` → `value`, `ts_percent`) и
+  `Player Totals.csv` (`pts/trb/ast/stl/blk`, `x3p_percent`) по ключу `(season, player_id)`.
+- Адаптер: фильтр лиги, дедуп обменянных игроков (сводная строка `2TM/3TM/…`), родной
+  строковый `player_id` (без `factorize`), `active_next` по присутствию в следующем сезоне,
+  `value` = `BPM`. Строки без `bpm` (до 1974) сохраняются с `value` = NaN, не «роняются».
+- Метка данных (`data_through`) и диапазон (`season_min`/`season_max` в `meta`) выводятся
+  из данных в `pipeline.build`, а не хардкодятся.
+
+> Прежний датасет `drgilermo/nba-players-stats` заканчивался сезоном 2016–17; переход на
+> поддерживаемый `sumitrodatta` расширяет охват до 2025–26. Адаптер `load_drgilermo`
+> сохранён в реестре `DATASET_LOADERS` для обратной совместимости.
 
 ## Контракт данных (SPEC.md §2)
 
@@ -85,13 +96,18 @@
 ## Пересборка
 
 ```bash
+task download  # data/sumitro ← sumitrodatta/nba-aba-baa-stats (kaggle CLI + токен)
 task data      # пайплайн → data/aging.json + проверка бюджета
 task build     # data + встраивание в index.html + валидация
+task verify    # браузерная проверка (jsdom): подзаголовок-диапазон + модалка/a11y
 ```
 
 Тесты пайплайна (`task test`) покрывают корректность дельта-метода, нормализацию
-per-36, обработку survivorship bias, соответствие схеме и бюджет размера — и должны
-быть зелёными до начала работы над фронтом.
+per-36, обработку survivorship bias, устойчивость адаптера к грязным данным (NaN-амплуа,
+строковый `player_id`, обменянные), соответствие схеме и бюджет размера — и должны быть
+зелёными до начала работы над фронтом. `task verify` (jsdom + d3) исполняет `index.html`
+на встроенных данных и проверяет подзаголовок-диапазон, доступность модалки и отсутствие
+ошибок в консоли.
 
 ## See Also
 
