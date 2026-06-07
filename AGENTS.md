@@ -25,9 +25,13 @@ insba_dashboard_contest/
 ├── SPEC.md              # Источник истины: конституция, контракт данных, сцены
 ├── RULES.md             # Enforceable-аксиомы (гейт /aif-verify, /aif-review)
 ├── PROMPT.md            # Постановка задачи, фазы, дефолты §7
+├── pyproject.toml       # конфиг pytest + ruff
 ├── index.html           # (будет) единственный артефакт рантайма
-├── pipeline/            # (будет) офлайн-пайплайн данных на Python
-│   └── tests/           # (будет) тесты пайплайна, пишутся раньше реализации
+├── pipeline/            # офлайн-пайплайн данных на Python (build-time)
+│   ├── logging_setup.py # настройка логирования (LOG_LEVEL)
+│   ├── requirements.txt # зависимости пайплайна
+│   ├── transform/       # нормализация и агрегаты (создаются по фазам)
+│   └── tests/           # тесты пайплайна (pytest), пишутся раньше реализации
 ├── references/          # Внешние референсы (дизайн-примеры)
 └── .ai-factory/         # Контекст AI Factory (config, rules, architecture)
 ```

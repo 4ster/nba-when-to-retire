@@ -30,7 +30,7 @@
 ## Tasks
 
 ### Фаза 0 — Каркас
-- [ ] **T1.** Каркас пайплайна и зависимости — `pipeline/` структура, `requirements.txt`, `logging_setup.py` (LOG_LEVEL), конфиг pytest/ruff, `.gitignore`.
+- [x] **T1.** Каркас пайплайна и зависимости — `pipeline/` структура, `requirements.txt`, `logging_setup.py` (LOG_LEVEL), конфиг pytest/ruff, `.gitignore`.
 
 ### Фаза 1 — Пайплайн данных (Python, TDD)
 - [ ] **T2.** Тесты: загрузка и нормализация (`tests/test_normalize.py`) — per-36, фильтр ≥1000 мин, бакеты амплуа/эпох.
