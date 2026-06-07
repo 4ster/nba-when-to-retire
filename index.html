@@ -267,20 +267,148 @@
 
     function rerenderActiveScene() { renderScene(currentScene); }
 
-    // ── Диспетчер сцен. Реальные графики — T12–T15; пока заглушки. ──
-    function renderScene(scene) {
+    // ── Геометрия графика ──
+    var VB_W = 640, VB_H = 420;
+    var MARGIN = { top: 46, right: 110, bottom: 40, left: 18 };
+
+    function clearChart() {
       var host = document.getElementById("chart");
-      if (!host) { return; }
-      host.innerHTML = "";
+      if (host) { host.innerHTML = ""; }
+      return host;
+    }
+    function baseSvg(host, titleText) {
       var svg = d3.select(host).append("svg")
         .attr("width", "100%").attr("height", "100%")
-        .attr("viewBox", "0 0 600 400").attr("preserveAspectRatio", "xMidYMid meet");
-      svg.append("text")
-        .attr("x", 300).attr("y", 200).attr("text-anchor", "middle")
-        .attr("fill", cssVar("--label"))
-        .attr("font-family", cssVar("--font"))
-        .attr("font-size", 18)
-        .text("Сцена " + scene.toUpperCase() + " — график появится здесь");
+        .attr("viewBox", "0 0 " + VB_W + " " + VB_H)
+        .attr("preserveAspectRatio", "xMidYMid meet")
+        .attr("font-family", cssVar("--font"));
+      svg.append("text").attr("x", MARGIN.left).attr("y", 22)
+        .attr("fill", cssVar("--fg")).attr("font-size", 17).attr("font-weight", 700)
+        .text(titleText);
+      return svg;
+    }
+    function emptyNote(host, msg) {
+      d3.select(host).append("svg")
+        .attr("viewBox", "0 0 " + VB_W + " " + VB_H).attr("width", "100%").attr("height", "100%")
+        .append("text").attr("x", VB_W / 2).attr("y", VB_H / 2).attr("text-anchor", "middle")
+        .attr("fill", cssVar("--muted")).attr("font-family", cssVar("--font")).text(msg);
+    }
+
+    // ── Данные: дельта-метод → уровневая кривая (кумулятивная сумма средних дельт) ──
+    function valueCells() {
+      return (data.aging_curve || []).filter(function (c) { return c.metric === "value"; });
+    }
+    function aggregateByAge(cells) {
+      var byAge = {};
+      cells.forEach(function (c) {
+        var o = byAge[c.age] || (byAge[c.age] = { age: +c.age, ws: 0, wlo: 0, whi: 0, n: 0 });
+        o.ws += c.value * c.n; o.wlo += c.ci_low * c.n; o.whi += c.ci_high * c.n; o.n += c.n;
+      });
+      return Object.keys(byAge).map(function (k) {
+        var o = byAge[k];
+        return { age: o.age, delta: o.ws / o.n, lo: o.wlo / o.n, hi: o.whi / o.n, n: o.n };
+      }).sort(function (a, b) { return a.age - b.age; });
+    }
+    function reconstructLevel(series) {
+      // Уровень = кумулятивная сумма средних дельт; коридор — кумулятивный в квадратурах.
+      var lvl = 0, varAcc = 0, out = [];
+      if (series.length) { out.push({ age: series[0].age - 1, level: 0, lo: 0, hi: 0, n: 0 }); }
+      series.forEach(function (d) {
+        lvl += d.delta;
+        var hw = (d.hi - d.lo) / 2; varAcc += hw * hw;
+        var sd = Math.sqrt(varAcc);
+        out.push({ age: d.age, level: lvl, lo: lvl - sd, hi: lvl + sd, n: d.n });
+      });
+      return out;
+    }
+
+    // ── Общий рендер уровневых кривых (US-1/US-2) ──
+    function drawLevelChart(svg, seriesList, opts) {
+      opts = opts || {};
+      var iw = VB_W - MARGIN.left - MARGIN.right, ih = VB_H - MARGIN.top - MARGIN.bottom;
+      var g = svg.append("g").attr("transform", "translate(" + MARGIN.left + "," + MARGIN.top + ")");
+      var allPts = seriesList.reduce(function (acc, s) { return acc.concat(s.points); }, []);
+      var x = d3.scaleLinear()
+        .domain([d3.min(allPts, function (d) { return d.age; }), d3.max(allPts, function (d) { return d.age; })])
+        .range([0, iw]);
+      var y = d3.scaleLinear()
+        .domain([
+          d3.min(allPts, function (d) { return opts.band ? d.lo : d.level; }),
+          d3.max(allPts, function (d) { return opts.band ? d.hi : d.level; })
+        ]).nice().range([ih, 0]);
+
+      // Тонкая ось возраста (нарративный x): редкие подписи, без сетки/рамки/делений по y.
+      g.selectAll("text.xt").data(x.ticks(6)).enter().append("text")
+        .attr("x", function (d) { return x(d); }).attr("y", ih + 24).attr("text-anchor", "middle")
+        .attr("fill", cssVar("--muted")).attr("font-size", 11).text(function (d) { return d; });
+      g.append("text").attr("x", iw).attr("y", ih + 24).attr("text-anchor", "start").attr("dx", 6)
+        .attr("fill", cssVar("--muted")).attr("font-size", 11).text("возраст");
+
+      var line = d3.line().x(function (d) { return x(d.age); }).y(function (d) { return y(d.level); })
+        .curve(d3.curveMonotoneX);
+
+      seriesList.forEach(function (s) {
+        if (opts.band) {
+          var area = d3.area().x(function (d) { return x(d.age); })
+            .y0(function (d) { return y(d.lo); }).y1(function (d) { return y(d.hi); })
+            .curve(d3.curveMonotoneX);
+          g.append("path").datum(s.points).attr("fill", cssVar("--band")).attr("d", area);
+        }
+        g.append("path").datum(s.points).attr("fill", "none")
+          .attr("stroke", s.color).attr("stroke-width", 2.4).attr("d", line);
+        if (opts.directLabels) {
+          var last = s.points[s.points.length - 1];
+          g.append("text").attr("x", x(last.age) + 6).attr("y", y(last.level)).attr("dy", "0.32em")
+            .attr("fill", s.color).attr("font-size", 12).attr("font-weight", 600).text(s.label);
+        }
+      });
+
+      if (opts.annotatePeak && seriesList.length === 1) {
+        var pts = seriesList[0].points;
+        var peak = pts.reduce(function (a, b) { return b.level > a.level ? b : a; });
+        g.append("circle").attr("cx", x(peak.age)).attr("cy", y(peak.level)).attr("r", 3.5)
+          .attr("fill", cssVar("--label"));
+        g.append("text").attr("x", x(peak.age)).attr("y", y(peak.level) - 10).attr("text-anchor", "middle")
+          .attr("fill", cssVar("--label")).attr("font-size", 12).attr("font-weight", 600)
+          .text("пик ≈ " + peak.age);
+      }
+    }
+
+    // ── Сцены ──
+    function sceneAverage() {
+      var host = clearChart(); if (!host) { return; }
+      var cells = valueCells();
+      if (!cells.length) { emptyNote(host, "Данные появятся после сборки (task build)"); return; }
+      var lvl = reconstructLevel(aggregateByAge(cells));
+      var svg = baseSvg(host, "Ценность (BPM), изменение к молодому возрасту");
+      drawLevelChart(svg, [{ key: "avg", label: "средняя", color: cssVar("--fg"), points: lvl }],
+        { band: true, annotatePeak: true });
+    }
+    function sceneByPosition() {
+      var host = clearChart(); if (!host) { return; }
+      var seriesList = ["guard", "wing", "big"].map(function (gkey) {
+        var cells = valueCells().filter(function (c) { return c.position_group === gkey; });
+        return {
+          key: gkey, label: POSITION_LABELS[gkey], color: cssVar(POSITION_VARS[gkey]),
+          points: reconstructLevel(aggregateByAge(cells))
+        };
+      }).filter(function (s) { return s.points.length > 1; });
+      if (!seriesList.length) { emptyNote(host, "Данные появятся после сборки (task build)"); return; }
+      var svg = baseSvg(host, "Ценность (BPM) по амплуа, изменение к молодому возрасту");
+      drawLevelChart(svg, seriesList, { band: false, directLabels: true });
+    }
+    function stubScene(scene) {
+      var host = clearChart(); if (!host) { return; }
+      emptyNote(host, "Сцена " + scene.toUpperCase() + " — скоро");
+    }
+
+    // ── Диспетчер сцен ──
+    function renderScene(scene) {
+      switch (scene) {
+        case "us1": sceneAverage(); break;
+        case "us2": sceneByPosition(); break;
+        default: stubScene(scene);
+      }
     }
   })();
   </script>
