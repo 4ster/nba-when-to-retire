@@ -79,6 +79,41 @@
       padding: 0.35rem 0.7rem;
     }
     #theme-toggle:focus-visible { outline: 2px solid var(--c-era-mid); outline-offset: 2px; }
+    #about-btn {
+      font: inherit; cursor: pointer; line-height: 1; font-weight: 700;
+      background: var(--surface); color: var(--fg);
+      border: 1px solid var(--hair); border-radius: 999px;
+      width: 1.9rem; height: 1.9rem; padding: 0; text-align: center;
+    }
+    #about-btn:focus-visible { outline: 2px solid var(--c-era-mid); outline-offset: 2px; }
+
+    /* ── Модалка «О данных и методике» ── */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 50;
+      display: none; align-items: center; justify-content: center;
+      padding: 1.25rem;
+      background: color-mix(in srgb, #000 55%, transparent);
+    }
+    .modal-backdrop[data-open="true"] { display: flex; }
+    .modal {
+      background: var(--bg); color: var(--fg);
+      border: 1px solid var(--hair); border-radius: 12px;
+      max-width: 40rem; width: 100%; max-height: 85vh; overflow-y: auto;
+      padding: 1.5rem 1.6rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    }
+    .modal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+    .modal h2 { margin: 0; font-size: 1.3rem; }
+    .modal h3 { margin: 1.1rem 0 0.4rem; font-size: 1rem; }
+    .modal p, .modal li { color: var(--fg); font-size: 0.92rem; line-height: 1.55; }
+    .modal ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }
+    .modal a { color: var(--c-era-modern); }
+    .modal-close {
+      font: inherit; cursor: pointer; line-height: 1; white-space: nowrap;
+      background: var(--surface); color: var(--fg);
+      border: 1px solid var(--hair); border-radius: 999px;
+      padding: 0.3rem 0.7rem;
+    }
+    .modal-close:focus-visible { outline: 2px solid var(--c-era-mid); outline-offset: 2px; }
 
     /* ── Интро ── */
     .intro {
@@ -136,10 +171,54 @@
 <body>
   <header class="site-header">
     <span class="brand">Игроки NBA: когда пора на пенсию?</span>
-    <span class="meta-line">данные по сезон <span id="data-through">—</span></span>
+    <span class="meta-line">данные <span id="season-range">—</span></span>
     <span class="spacer"></span>
+    <button id="about-btn" type="button" title="О данных и методике"
+            aria-label="О данных и методике" aria-haspopup="dialog"
+            aria-expanded="false" aria-controls="about-modal">?</button>
     <button id="theme-toggle" type="button" title="Переключить тему" aria-label="Переключить светлую/тёмную тему">◐ Тема</button>
   </header>
+
+  <div class="modal-backdrop" id="about-backdrop" data-open="false">
+    <div class="modal" id="about-modal" role="dialog" aria-modal="true" aria-labelledby="about-title">
+      <div class="modal-head">
+        <h2 id="about-title">О данных и методике</h2>
+        <button type="button" class="modal-close" id="about-close" aria-label="Закрыть окно">Закрыть</button>
+      </div>
+
+      <h3>Источник данных</h3>
+      <p>Датасет <a id="about-source-link"
+        href="https://www.kaggle.com/datasets/sumitrodatta/nba-aba-baa-stats"
+        target="_blank" rel="noopener noreferrer">sumitrodatta/nba-aba-baa-stats</a>
+        (по данным Basketball‑Reference, лицензия CC0). Берутся только сезоны NBA.
+        Охват — <span id="about-range">—</span>. Продвинутая метрика BPM доступна
+        примерно с сезона 1973–74; за более ранние годы ценность не рассчитывается.</p>
+
+      <h3>Метрика ценности</h3>
+      <p>За ценность игрока принят BPM (Box Plus/Minus) — оценка вклада на 100 владений
+        относительно среднего по лиге. Скоростные показатели приводятся к «на 36 минут»,
+        чтобы сравнивать игроков с разным игровым временем.</p>
+
+      <h3>Как считаются возрастные кривые</h3>
+      <ul>
+        <li><b>Дельта‑метод.</b> Кривая строится по изменению результата год‑к‑году
+          у одного и того же игрока, а не по срезу разных игроков — это устраняет эффект
+          состава лиги.</li>
+        <li><b>Контроль «выживших» (survivorship).</b> Учитывается, что слабые игроки
+          раньше уходят из лиги; без поправки средняя ложно «росла» бы с возрастом.</li>
+        <li><b>Правое цензурирование.</b> Ещё действующие игроки (их последний сезон
+          совпадает с концом данных) исключаются из категории «рано угас», чтобы граница
+          датасета не выдавалась за раннее угасание.</li>
+        <li><b>Порог включения.</b> В расчёт идут сезоны не менее 1000 минут — фильтр
+          шума малых выборок.</li>
+      </ul>
+
+      <h3>Оговорка</h3>
+      <p>Блок «какие навыки уходят первыми» — срезовое сравнение по возрастам
+        (cross‑section), а не траектория одного игрока; читать как иллюстрацию, а не
+        как причинно‑следственную связь.</p>
+    </div>
+  </div>
 
   <main>
     <section class="intro">
@@ -225,10 +304,33 @@
       if (window.console) { console.error("seed-data parse failed:", err); }
     }
 
+    // Год окончания сезона → метка диапазона, напр. 2026 → "2025–26" (en-dash).
+    function seasonLabel(s) {
+      var p = s % 100;
+      return (s - 1) + "–" + (p < 10 ? "0" + p : "" + p);
+    }
+    // Русское склонение слова «сезон» по числу (1 сезон, 2 сезона, 5 сезонов).
+    function pluralSeasons(n) {
+      var d = n % 10, dd = n % 100;
+      if (d === 1 && dd !== 11) { return "сезон"; }
+      if (d >= 2 && d <= 4 && (dd < 10 || dd >= 20)) { return "сезона"; }
+      return "сезонов";
+    }
+
     function initMeta() {
-      var el = document.getElementById("data-through");
-      var through = data && data.meta ? data.meta.data_through : null;
-      if (el && through) { el.textContent = through; }
+      var el = document.getElementById("season-range");
+      var meta = data && data.meta ? data.meta : null;
+      if (!el || !meta) { return; }
+      var smin = meta.season_min, smax = meta.season_max, through = meta.data_through;
+      if (smin && smax) {
+        // Явный охват снимает двусмысленность «данные только за один сезон».
+        var count = smax - smin + 1;
+        var last = through || seasonLabel(smax);
+        el.textContent = "по сезон " + last + " · охват " + seasonLabel(smin) +
+          " … " + seasonLabel(smax) + " (" + count + " " + pluralSeasons(count) + ")";
+      } else if (through) {
+        el.textContent = "по сезон " + through;   // fallback при отсутствии диапазона
+      }
     }
 
     function initTheme() {
@@ -241,6 +343,54 @@
         root.setAttribute("data-theme", next);
         rerenderActiveScene();
         if (sandboxRerender) { sandboxRerender(); }   // тема не должна ломать контраст песочницы
+      });
+    }
+
+    function initAbout() {
+      var btn = document.getElementById("about-btn");
+      var backdrop = document.getElementById("about-backdrop");
+      var modal = document.getElementById("about-modal");
+      var closeBtn = document.getElementById("about-close");
+      if (!btn || !backdrop || !modal) { return; }
+
+      // Охват сезонов в модалке — из meta (как в подзаголовке).
+      var rangeEl = document.getElementById("about-range");
+      var meta = data && data.meta ? data.meta : null;
+      if (rangeEl && meta && meta.season_min && meta.season_max) {
+        rangeEl.textContent = seasonLabel(meta.season_min) + " … " + seasonLabel(meta.season_max);
+      }
+
+      var lastFocused = null;
+      function focusable() {
+        return modal.querySelectorAll(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+      }
+      function onKeydown(e) {
+        if (e.key === "Escape") { closeModal(); return; }
+        if (e.key !== "Tab") { return; }
+        var f = focusable();
+        if (!f.length) { return; }
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+      function openModal() {
+        lastFocused = document.activeElement;
+        backdrop.setAttribute("data-open", "true");
+        btn.setAttribute("aria-expanded", "true");
+        document.addEventListener("keydown", onKeydown);
+        if (closeBtn) { closeBtn.focus(); }
+      }
+      function closeModal() {
+        backdrop.setAttribute("data-open", "false");
+        btn.setAttribute("aria-expanded", "false");
+        document.removeEventListener("keydown", onKeydown);
+        if (lastFocused && lastFocused.focus) { lastFocused.focus(); }  // вернуть фокус на «?»
+      }
+      btn.addEventListener("click", openModal);
+      if (closeBtn) { closeBtn.addEventListener("click", closeModal); }
+      backdrop.addEventListener("click", function (e) {
+        if (e.target === backdrop) { closeModal(); }   // клик по бэкдропу, не по содержимому
       });
     }
 
@@ -641,6 +791,7 @@
     // Запуск после объявления всех функций и var-констант (избегаем hoisting-ловушек).
     initMeta();
     initTheme();
+    initAbout();
     initScrolly();
     initSandbox();
   })();
