@@ -47,7 +47,7 @@
 - [x] **T10.** Встраивание JSON `embed.py` → `<script id="seed-data">` — *blocked by T9, T11*.
 - [x] **T11.** Каркас `index.html` — темы (data-theme, токены), CDN с фикс. версиями, один `<script id="app">`, `JSON.parse` в try/catch, prefers-reduced-motion, дата данных — *blocked by T9*.
 - [x] **T12.** Сцены US-1 (средняя кривая) + US-2 (по амплуа) — *blocked by T11*.
-- [ ] **T13.** Сцены US-3 (порядок угасания) + US-4 (эпохи) — *blocked by T11*.
+- [x] **T13.** Сцены US-3 (порядок угасания) + US-4 (эпохи) — *blocked by T11*.
 - [ ] **T14.** Сцены US-5 (выбросы) + US-6 (обрыв) — *blocked by T11*.
 - [ ] **T15.** Сцена US-7: песочница (фильтры, стабильная палитра, сброс) — *blocked by T12, T13, T14*.
 - [ ] **T16.** Гейт приёмки: дата-виз/сборка/доступность + браузерная проверка (Playwright) — *blocked by T15*.

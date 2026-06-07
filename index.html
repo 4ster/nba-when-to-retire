@@ -355,7 +355,7 @@
           g.append("path").datum(s.points).attr("fill", cssVar("--band")).attr("d", area);
         }
         g.append("path").datum(s.points).attr("fill", "none")
-          .attr("stroke", s.color).attr("stroke-width", 2.4).attr("d", line);
+          .attr("stroke", s.color).attr("stroke-width", s.width || 2.4).attr("d", line);
         if (opts.directLabels) {
           var last = s.points[s.points.length - 1];
           g.append("text").attr("x", x(last.age) + 6).attr("y", y(last.level)).attr("dy", "0.32em")
@@ -397,6 +397,76 @@
       var svg = baseSvg(host, "Ценность (BPM) по амплуа, изменение к молодому возрасту");
       drawLevelChart(svg, seriesList, { band: false, directLabels: true });
     }
+    // Подписи компонентов навыка и эпох (семантика).
+    var COMPONENT_LABELS = {
+      PTS_36: "очки", REB_36: "подбор", AST_36: "пас", STL_36: "перехваты",
+      BLK_36: "блоки", FG3_pct: "трёхочк. %", TS_pct: "истинный %"
+    };
+    var ERAS = [
+      { key: "≤1989", v: "--c-era-pre", width: 2.0 },
+      { key: "1990–2009", v: "--c-era-mid", width: 2.0 },
+      { key: "2010+", v: "--c-era-modern", width: 3.2 }   // современный хвост — акцент
+    ];
+
+    // ── US-3: что умирает первым (small multiples, нормировано к пику = 100%) ──
+    function sceneSkillDecline() {
+      var host = clearChart(); if (!host) { return; }
+      var sd = data.skill_decline || [];
+      if (!sd.length) { emptyNote(host, "Данные появятся после сборки (task build)"); return; }
+      var byComp = {};
+      sd.forEach(function (r) { (byComp[r.component] || (byComp[r.component] = [])).push(r); });
+      var comps = Object.keys(byComp).map(function (c) {
+        var pts = byComp[c].slice().sort(function (a, b) { return a.age - b.age; });
+        var peak = pts.reduce(function (a, b) { return b.value_pct > a.value_pct ? b : a; });
+        return { key: c, label: COMPONENT_LABELS[c] || c, pts: pts, peakAge: peak.age };
+      }).sort(function (a, b) { return a.peakAge - b.peakAge; }); // ранний пик → раньше угасает
+      var svg = baseSvg(host, "Угасание навыков (% к пику) — порядок: что умирает первым");
+      drawSmallMultiples(svg, comps);
+    }
+    function drawSmallMultiples(svg, comps) {
+      var area = { x: MARGIN.left, y: MARGIN.top, w: VB_W - MARGIN.left - 16, h: VB_H - MARGIN.top - 12 };
+      var cols = Math.min(comps.length <= 3 ? comps.length : Math.ceil(comps.length / 2), 4);
+      var rows = Math.ceil(comps.length / cols);
+      var cw = area.w / cols, ch = area.h / rows, pad = { t: 18, r: 12, b: 16, l: 10 };
+      var allAges = [];
+      comps.forEach(function (c) { c.pts.forEach(function (p) { allAges.push(p.age); }); });
+      var xdom = [d3.min(allAges), d3.max(allAges)];
+      comps.forEach(function (c, i) {
+        var gx = area.x + (i % cols) * cw, gy = area.y + Math.floor(i / cols) * ch;
+        var g = svg.append("g").attr("transform", "translate(" + gx + "," + gy + ")");
+        var x = d3.scaleLinear().domain(xdom).range([pad.l, cw - pad.r]);
+        var y = d3.scaleLinear().domain([0, 100]).range([ch - pad.b, pad.t]);
+        var line = d3.line().x(function (d) { return x(d.age); }).y(function (d) { return y(d.value_pct); })
+          .curve(d3.curveMonotoneX);
+        g.append("line").attr("x1", pad.l).attr("x2", cw - pad.r).attr("y1", y(100)).attr("y2", y(100))
+          .attr("stroke", cssVar("--hair")).attr("stroke-dasharray", "2,2");
+        g.append("path").datum(c.pts).attr("fill", "none").attr("stroke", cssVar("--fg"))
+          .attr("stroke-width", 1.8).attr("d", line);
+        var peak = c.pts.reduce(function (a, b) { return b.value_pct > a.value_pct ? b : a; });
+        g.append("circle").attr("cx", x(peak.age)).attr("cy", y(peak.value_pct)).attr("r", 2.6)
+          .attr("fill", cssVar("--c-era-modern"));
+        g.append("text").attr("x", pad.l).attr("y", 12).attr("fill", cssVar("--fg"))
+          .attr("font-size", 11).attr("font-weight", 600).text((i + 1) + ". " + c.label);
+        g.append("text").attr("x", cw - pad.r).attr("y", 12).attr("text-anchor", "end")
+          .attr("fill", cssVar("--muted")).attr("font-size", 10).text("пик " + c.peakAge);
+      });
+    }
+
+    // ── US-4: эпохи (наложенные кривые, современный хвост — акцент) ──
+    function sceneEras() {
+      var host = clearChart(); if (!host) { return; }
+      var seriesList = ERAS.map(function (e) {
+        var cells = valueCells().filter(function (c) { return c.era_bucket === e.key; });
+        return {
+          key: e.key, label: e.key, color: cssVar(e.v), width: e.width,
+          points: reconstructLevel(aggregateByAge(cells))
+        };
+      }).filter(function (s) { return s.points.length > 1; });
+      if (!seriesList.length) { emptyNote(host, "Данные появятся после сборки (task build)"); return; }
+      var svg = baseSvg(host, "Ценность (BPM) по эпохам — современные карьеры длиннее");
+      drawLevelChart(svg, seriesList, { band: false, directLabels: true });
+    }
+
     function stubScene(scene) {
       var host = clearChart(); if (!host) { return; }
       emptyNote(host, "Сцена " + scene.toUpperCase() + " — скоро");
@@ -407,6 +477,8 @@
       switch (scene) {
         case "us1": sceneAverage(); break;
         case "us2": sceneByPosition(); break;
+        case "us3": sceneSkillDecline(); break;
+        case "us4": sceneEras(); break;
         default: stubScene(scene);
       }
     }
