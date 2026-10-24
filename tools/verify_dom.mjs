@@ -65,6 +65,31 @@ check("signatures unique", new Set(sigs).size === sigs.length);
 const stepsText = (document.querySelector(".steps") || {}).textContent || "";
 check("no «СЦЕНА N» kicker", !/СЦЕНА\s*\d/i.test(stepsText));
 
+// Kicker = short scene name in EVERY card (not empty, not «СЦЕНА N»).
+const kickers = [...document.querySelectorAll(".step .card .kicker")].map((k) => k.textContent.trim());
+check("7 scene kickers present, non-empty", kickers.length === 7 && kickers.every((t) => t.length > 0));
+
+// Layout contract (centred grid, no dead column, sticky offsets, no hairline).
+const appCss = nodeInner("style", "app-css");
+const rule = (sel) => {
+  const m = appCss.match(new RegExp(sel.replace(/[#.]/g, "\\$&") + "\\s*{([^}]*)}"));
+  return m ? m[1] : "";
+};
+check("--content-max container token defined", /--content-max:/.test(appCss));
+check(".scrolly centred (max-width + margin auto)", /max-width:\s*var\(--content-max\)/.test(rule(".scrolly")) && /margin:\s*0 auto/.test(rule(".scrolly")));
+check(".scrolly columns use minmax(0,…) (no 360px overflow)", /minmax\(0, 1\.15fr\) minmax\(0, 1fr\)/.test(appCss));
+check("header/nav aligned to same container (--gutter)", /padding:[^;]*var\(--gutter\)/.test(rule(".site-header")) && /padding:[^;]*var\(--gutter\)/.test(rule("#scene-nav")));
+check("scene-nav sticky offset = header height", /top:\s*var\(--header-h\)/.test(rule("#scene-nav")));
+check("no hard-coded nav offset (3.1rem)", !/top:\s*3\.1rem/.test(appCss));
+check("no hairline on header/nav", !/border-bottom/.test(rule(".site-header")) && !/border-bottom/.test(rule("#scene-nav")));
+check("header above nav (z-index)", (parseInt((rule(".site-header").match(/z-index:\s*(\d+)/) || [])[1], 10) || 0) > (parseInt((rule("#scene-nav").match(/z-index:\s*(\d+)/) || [])[1], 10) || 0));
+check("sticky graphic offset under header+nav", /top:\s*calc\(var\(--header-h\) \+ var\(--nav-h\)/.test(rule(".sticky-graphic")));
+
+// Header: no coverage block; data date lives in the "?" modal instead.
+const headerEl = document.querySelector(".site-header");
+check("no «охват» block in header", headerEl && !/охват/i.test(headerEl.textContent) && !headerEl.querySelector("#season-range, #season-accent, .meta-line"));
+check("season accent moved into modal", !!document.querySelector("#about-modal #season-accent"));
+
 // US-7 filters board is positioned ABOVE the canvas in DOM order (static markup).
 const board = document.getElementById("board");
 const chart = document.getElementById("chart");
@@ -83,10 +108,15 @@ const appScript = [...document.querySelectorAll("script")].find((s) => s.id === 
 if (!appScript) { console.error("FAIL: app script block not found"); process.exit(1); }
 try { window.eval(appScript.textContent); } catch (err) { console.error("FAIL: app threw:", err && err.stack ? err.stack : err); process.exit(1); }
 
-// Runtime-built UI: scene nav dots + scannable subtitle.
+// Runtime-built UI: scene nav with basketball indicators + data date in modal + hero subtitle.
 check("scene nav has 7 dots", document.querySelectorAll("#scene-dots .dot").length === 7);
+check("dots are basketballs (svg ball + seams)",
+  document.querySelectorAll("#scene-dots .dot svg .ball").length === 7
+  && document.querySelectorAll("#scene-dots .dot svg .seam").length >= 14);
 const acc = document.getElementById("season-accent");
-check("subtitle accent scannable", acc && /по сезон/.test(acc.textContent));
+check("data date in modal scannable", acc && /по сезон/.test(acc.textContent));
+const hero = document.getElementById("hero-kicker");
+check("hero subtitle has seasons count in brackets", hero && /Возрастные кривые NBA · \d{4}–\d{4} \(\d+ сезонов\)/.test(hero.textContent));
 
 // Headline numbers reconciled with aggregates.
 const num = (id) => (document.getElementById(id) || {}).textContent;
@@ -108,6 +138,11 @@ if (typeof window.__nbaScene === "function") {
   check("US-2 slope (≥3 segments)", document.querySelectorAll("#chart path.curve").length >= 3);
   window.__nbaScene("us3");
   check("US-3 lollipop", document.querySelectorAll("#chart circle.lolli").length >= 1);
+  // Ball indicator states: on us3 → 2 done, 1 active, 4 future.
+  const st = [...document.querySelectorAll("#scene-dots .dot")].map((d) => d.getAttribute("data-state"));
+  check("ball states on us3 (done/active/future): " + JSON.stringify(st),
+    st.filter((s) => s === "done").length === 2 && st.filter((s) => s === "active").length === 1
+    && st.filter((s) => s === "future").length === 4);
   window.__nbaScene("us4");
   check("US-4 era overlay + gap band", document.querySelectorAll("#chart path.curve").length >= 3 && document.querySelectorAll("#chart path.gap").length >= 1);
   window.__nbaScene("us5");
