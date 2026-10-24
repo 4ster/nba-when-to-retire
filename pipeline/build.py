@@ -22,6 +22,7 @@ from pipeline.fetch import load_raw
 from pipeline.logging_setup import get_logger
 from pipeline.transform import normalize as nz
 from pipeline.transform.aging import aging_curve
+from pipeline.transform.exit_peaks import exit_age, player_peaks
 from pipeline.transform.notable import notable
 from pipeline.transform.skill_decline import skill_decline
 from pipeline.transform.survival import survival
@@ -78,11 +79,15 @@ def build_payload(
     aging = aging_curve(df, list(metrics))
     surv = survival(df)
     skill = skill_decline(df, [c for c in skill_components if c in df.columns])
+    exits = exit_age(df)
+    peaks = player_peaks(df)
 
     payload = {
         "aging_curve": _records(aging, {"value": 4, "ci_low": 4, "ci_high": 4}),
         "survival": _records(surv, {"survival": 4}),
         "skill_decline": _records(skill, {"value_pct": 2}),
+        "exit_age": _records(exits),
+        "player_peaks": peaks,
         "notable": notable(df),
         "meta": {
             "data_through": data_through,
