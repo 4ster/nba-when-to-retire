@@ -23,11 +23,17 @@
       --fs-giant: clamp(3rem, 9vw, 5rem);
       --fs-h1: clamp(2.1rem, 5.5vw, 3.6rem);
       --fs-h2: clamp(1.45rem, 3vw, 2rem);
+      --fs-kicker: 0.8rem;
       --fs-lede: 1.1rem;
       --fs-body: 1.0625rem;
       --fs-label: 0.8125rem;
       --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-6: 24px; --s-8: 32px;
       --s-12: 48px; --s-16: 64px;
+      /* Единый центрированный контейнер: шапка, навигация и scrolly выровнены по нему. */
+      --content-max: 76rem;
+      --gutter: max(var(--s-4), calc((100% - var(--content-max)) / 2));
+      /* Высоты sticky-баров; уточняются JS (initStickyOffsets) по фактической высоте. */
+      --header-h: 3.2rem; --nav-h: 2.4rem;
       --t-fast: 200ms; --t-step: 320ms; --t-scene: 600ms; --t-theme: 300ms;
       --ease: cubic-bezier(0.22, 1, 0.36, 1);
     }
@@ -59,18 +65,14 @@
     .site-header {
       position: sticky; top: 0; z-index: 20;
       display: flex; align-items: baseline; gap: var(--s-3); flex-wrap: wrap;
-      padding: var(--s-3) var(--s-4);
+      padding: var(--s-3) var(--gutter); /* контент шапки в том же контейнере, без hairline */
       background: color-mix(in srgb, var(--bg) 86%, transparent);
       backdrop-filter: blur(6px);
-      border-bottom: 1px solid var(--hair);
     }
     .site-header .brand {
       font-family: var(--font-display); font-weight: 600; letter-spacing: 0.01em;
       text-transform: uppercase; font-size: 1rem;
     }
-    .site-header .meta-line { color: var(--muted); font-size: var(--fs-label); }
-    .site-header .meta-line .accent { color: var(--fg); font-weight: 600; }
-    .site-header .meta-line .sub { opacity: 0.8; }
     .site-header .spacer { flex: 1 1 auto; }
     .pill {
       font: inherit; cursor: pointer; line-height: 1;
@@ -83,23 +85,33 @@
     .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     #about-btn { font-weight: 600; width: 1.9rem; height: 1.9rem; padding: 0; text-align: center; }
 
-    /* ── Навигация по сценам (индикатор прогресса) ── */
+    /* ── Навигация по сценам (индикатор прогресса) ──
+       sticky-offset = фактическая высота шапки (--header-h ставит JS), без hairline. */
     #scene-nav {
-      position: sticky; top: 3.1rem; z-index: 15;
+      position: sticky; top: var(--header-h); z-index: 19;
       display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap;
-      padding: var(--s-2) var(--s-4);
-      background: color-mix(in srgb, var(--bg) 80%, transparent);
-      border-bottom: 1px solid var(--hair);
+      padding: var(--s-2) var(--gutter);
+      background: color-mix(in srgb, var(--bg) 86%, transparent);
+      backdrop-filter: blur(6px);
       font-size: var(--fs-label); color: var(--muted);
     }
-    #scene-nav .dots { display: flex; gap: var(--s-1); }
+    #scene-nav .dots { display: flex; gap: var(--s-2); }
+    /* Индикатор — баскетбольный мяч (инлайн-SVG): будущий — контур --hair,
+       пройденный — контур --accent со швами, активный — залит --accent, швы цветом фона. */
     #scene-nav button.dot {
-      width: 0.95rem; height: 0.95rem; padding: 0; border-radius: 999px; cursor: pointer;
-      background: transparent; border: 1.5px solid var(--hair); line-height: 1;
-      font-size: 0; color: transparent;
-      transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+      width: 1.15rem; height: 1.15rem; padding: 0; border: none; cursor: pointer;
+      background: transparent; color: var(--hair); display: inline-flex; line-height: 0;
+      transition: color var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease),
+        transform var(--t-fast) var(--ease);
     }
-    #scene-nav button.dot[aria-current="true"] { background: var(--accent); border-color: var(--accent); }
+    #scene-nav button.dot svg { width: 100%; height: 100%; display: block; }
+    #scene-nav button.dot .ball { fill: none; stroke: currentColor; stroke-width: 2; }
+    #scene-nav button.dot .seam { fill: none; stroke: currentColor; stroke-width: 1.5; opacity: 0; }
+    #scene-nav button.dot[data-state="done"] { color: var(--accent); opacity: 0.45; }
+    #scene-nav button.dot[data-state="done"] .seam { opacity: 1; }
+    #scene-nav button.dot[aria-current="true"] { color: var(--accent); transform: scale(1.15); }
+    #scene-nav button.dot[aria-current="true"] .ball { fill: var(--accent); }
+    #scene-nav button.dot[aria-current="true"] .seam { stroke: var(--bg); opacity: 1; }
     #scene-nav button.dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     #scene-nav .pos { font-variant-numeric: tabular-nums; min-width: 2.5rem; }
     #scene-nav .title { color: var(--fg); font-weight: 600; }
@@ -126,8 +138,9 @@
 
     /* ── Интро ── */
     .intro { max-width: 42rem; margin: 0 auto; padding: var(--s-12) var(--s-4) var(--s-8); }
-    .intro .kicker {
-      font-family: var(--font-display); font-weight: 500; font-size: 0.8rem;
+    /* Kicker общий: интро и карточки сцен (краткое имя сцены, не «СЦЕНА N»). */
+    .kicker {
+      font-family: var(--font-display); font-weight: 500; font-size: var(--fs-kicker);
       text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin: 0 0 var(--s-3);
     }
     .intro h1 {
@@ -140,10 +153,17 @@
       border-left: 3px solid var(--accent); color: var(--fg);
     }
 
-    /* ── Скроллителлинг: один sticky-канвас на все сцены ── */
-    .scrolly { position: relative; display: grid; grid-template-columns: 1fr; gap: 0; }
+    /* ── Скроллителлинг: один sticky-канвас на все сцены ──
+       Грид центрирован контейнером --content-max: графика слева, текст справа,
+       мёртвых колонок нет. */
+    .scrolly {
+      position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0;
+      max-width: var(--content-max); margin: 0 auto; padding: 0 var(--s-4); width: 100%;
+    }
     .sticky-graphic {
-      position: sticky; top: 6rem; height: 78vh; margin: 0;
+      position: sticky; top: calc(var(--header-h) + var(--nav-h) + var(--s-4));
+      height: calc(100vh - var(--header-h) - var(--nav-h) - var(--s-8));
+      max-height: 78vh; margin: 0;
       display: flex; flex-direction: column; align-items: stretch; justify-content: center;
     }
     /* Панель фильтров US-7 — СВЕРХУ над графикой, видна только в сцене */
@@ -162,27 +182,28 @@
     #board select:focus-visible, #board button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     #chart { width: 100%; flex: 1 1 auto; min-height: 0; display: block; }
 
-    .steps { position: relative; max-width: 26rem; margin: 0 auto; padding: 0 var(--s-4); width: 100%; }
+    .steps { position: relative; max-width: 30rem; margin: 0 auto; width: 100%; min-width: 0; }
     .step { min-height: 84vh; display: flex; align-items: center; }
     .step > .card {
       background: var(--surface); border: 1px solid var(--hair); border-radius: 10px;
-      padding: var(--s-6); max-width: 100%;
+      padding: var(--s-8); max-width: 100%; width: 100%;
       opacity: 0.4; transform: translateY(12px);
       transition: opacity var(--t-step) var(--ease), transform var(--t-step) var(--ease);
     }
     .step.is-active > .card { opacity: 1; transform: none; }
+    .step .kicker { margin-bottom: var(--s-2); }
     .step h2 {
-      margin: 0 0 var(--s-2); font-family: var(--font-display); font-weight: 500;
+      margin: 0 0 var(--s-3); font-family: var(--font-display); font-weight: 500;
       font-size: var(--fs-h2); line-height: 1.1; text-transform: uppercase;
     }
     .step h2 .num { color: var(--accent); }
-    .step p { margin: 0; color: var(--fg); }
+    .step p { margin: 0; color: var(--fg); font-size: var(--fs-lede); line-height: 1.6; }
     .step p .num { font-weight: 600; }
 
     @media (min-width: 56rem) {
-      .scrolly { grid-template-columns: 1.15fr 1fr; }
-      .sticky-graphic { grid-column: 1; order: 1; top: 6rem; }
-      .steps { grid-column: 2; order: 2; margin: 0; }
+      .scrolly { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--s-8); }
+      .sticky-graphic { grid-column: 1; order: 1; }
+      .steps { grid-column: 2; order: 2; }
     }
 
     .outro { max-width: 42rem; margin: var(--s-16) auto; padding: 0 var(--s-4) var(--s-16); color: var(--muted); }
@@ -200,7 +221,6 @@
   <header class="site-header">
     <span class="brand">Игроки NBA: когда пора на пенсию?</span>
     <span class="spacer"></span>
-    <span class="meta-line"><span class="accent" id="season-accent">—</span> <span class="sub" id="season-range"></span></span>
     <button id="about-btn" class="pill" type="button" title="О данных и методике"
             aria-label="О данных и методике" aria-haspopup="dialog"
             aria-expanded="false" aria-controls="about-modal">?</button>
@@ -226,7 +246,8 @@
         href="https://www.kaggle.com/datasets/sumitrodatta/nba-aba-baa-stats"
         target="_blank" rel="noopener noreferrer">sumitrodatta/nba-aba-baa-stats</a>
         (по данным Basketball‑Reference, лицензия CC0). Берутся только сезоны NBA.
-        Охват — <span id="about-range" class="num">—</span>. Продвинутая метрика BPM доступна
+        Охват — <span id="about-range" class="num">—</span>; данные —
+        <span id="season-accent" class="num">—</span>. Продвинутая метрика BPM доступна
         примерно с сезона 1973–74; за более ранние годы ценность не рассчитывается.</p>
 
       <h3>Метрика ценности</h3>
@@ -257,7 +278,7 @@
 
   <main>
     <section class="intro">
-      <p class="kicker">Возрастные кривые NBA · 1952–2026</p>
+      <p class="kicker" id="hero-kicker">Возрастные кривые NBA · 1952–2026 (75 сезонов)</p>
       <h1>Когда игрок NBA выходит на пик и когда идёт на спад</h1>
       <p class="lede">Возрастные кривые игроков, построенные по изменению результата
         год‑к‑году у одного игрока, на скоростных метриках, с поправкой на «выживших».</p>
@@ -274,6 +295,7 @@
       <div class="steps">
         <div class="step" id="step-us1" data-scene="us1" data-signature="us1-mountain">
           <div class="card">
+            <p class="kicker">Пик ценности</p>
             <h2>Пик ценности — <span id="hl-peak" class="num">—</span> лет</h2>
             <p>Средняя кривая ценности по возрасту. Значение растёт до пика, затем
               постепенно снижается; коридор — неопределённость оценки.</p>
@@ -281,6 +303,7 @@
         </div>
         <div class="step" id="step-us2" data-scene="us2" data-signature="us2-split">
           <div class="card">
+            <p class="kicker">По амплуа</p>
             <h2>После <span id="hl-div" class="num">—</span> траектории амплуа расходятся</h2>
             <p>До пика защитники, винги и большие близки. После — большие теряют ценность
               сильнее остальных; пики амплуа почти совпадают.</p>
@@ -288,6 +311,7 @@
         </div>
         <div class="step" id="step-us3" data-scene="us3" data-signature="us3-board">
           <div class="card">
+            <p class="kicker">Навыки</p>
             <h2>Атлетизм снижается раньше бросковых навыков</h2>
             <p>Возраст, в котором навык опускается ниже 90% своего пика. Блок и перехват
               снижаются первыми; реализация и пас держатся (отчасти из-за «выживших»).</p>
@@ -295,6 +319,7 @@
         </div>
         <div class="step" id="step-us4" data-scene="us4" data-signature="us4-film">
           <div class="card">
+            <p class="kicker">Эпохи</p>
             <h2>Современные карьеры длятся дольше</h2>
             <p>Кривые трёх эпох. У современных значимая выборка тянется до 37 лет против
               34 в эпохе до 1989-го — разрыв подписан на графике.</p>
@@ -302,6 +327,7 @@
         </div>
         <div class="step" id="step-us5" data-scene="us5" data-signature="us5-spotlight">
           <div class="card">
+            <p class="kicker">Длина карьер</p>
             <h2>Длина карьеры — от <span id="hl-fade" class="num">—</span> до <span id="hl-long" class="num">—</span> сезонов</h2>
             <p>Диапазоны карьер отдельных игроков: от первого до последнего сезона.
               Долгожители рядом с рано закончившими.</p>
@@ -309,6 +335,7 @@
         </div>
         <div class="step" id="step-us6" data-scene="us6" data-signature="us6-cliff">
           <div class="card">
+            <p class="kicker">Возраст ухода</p>
             <h2>Половина уходит из лиги к <span id="hl-med" class="num">—</span></h2>
             <p>Распределение возраста ухода. Больше всего уходят в 24–25; оранжевый
               флажок — медианный возраст ухода.</p>
@@ -316,6 +343,7 @@
         </div>
         <div class="step" id="step-us7" data-scene="us7" data-signature="us7-clipboard">
           <div class="card">
+            <p class="kicker">Песочница</p>
             <h2>Соберите свою кривую</h2>
             <p>Фильтры сверху: амплуа, эпоха, метрика. Выбор пересобирает кривую,
               базовая средняя остаётся для сравнения.</p>
@@ -380,7 +408,7 @@
       { key: "2010+", v: "--c-era-modern", width: 3.0, dash: null }
     ];
     var SCENE_TITLES = {
-      us1: "Пик ценности", us2: "Амплуа", us3: "Навыки", us4: "Эпохи",
+      us1: "Пик ценности", us2: "По амплуа", us3: "Навыки", us4: "Эпохи",
       us5: "Длина карьер", us6: "Возраст ухода", us7: "Песочница"
     };
     var SCENE_ORDER = ["us1", "us2", "us3", "us4", "us5", "us6", "us7"];
@@ -873,10 +901,18 @@
     // ── Навигация по сценам ──
     function buildNav() {
       var dots = document.getElementById("scene-dots");
+      // Мяч-индикатор: круг + швы (горизонтальный и два боковых); состояния красит CSS.
+      var BALL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
+        + '<circle class="ball" cx="12" cy="12" r="9"/>'
+        + '<path class="seam" d="M3 12h18"/>'
+        + '<path class="seam" d="M5.6 5.6c3.1 3.3 3.1 9.5 0 12.8"/>'
+        + '<path class="seam" d="M18.4 5.6c-3.1 3.3-3.1 9.5 0 12.8"/>'
+        + '</svg>';
       SCENE_ORDER.forEach(function (s, i) {
         var btn = document.createElement("button");
         btn.className = "dot"; btn.type = "button"; btn.setAttribute("role", "tab");
         btn.setAttribute("aria-label", "Сцена " + (i + 1) + ": " + SCENE_TITLES[s]);
+        btn.innerHTML = BALL_SVG;
         btn.addEventListener("click", function () {
           var el = document.getElementById("step-" + s);
           if (el) { el.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" }); }
@@ -889,7 +925,27 @@
       var pos = document.getElementById("scene-pos"); if (pos) { pos.textContent = i + 1; }
       var title = document.getElementById("scene-title"); if (title) { title.textContent = SCENE_TITLES[scene]; }
       var dots = document.querySelectorAll("#scene-dots .dot");
-      for (var k = 0; k < dots.length; k++) { dots[k].setAttribute("aria-current", k === i ? "true" : "false"); }
+      for (var k = 0; k < dots.length; k++) {
+        dots[k].setAttribute("aria-current", k === i ? "true" : "false");
+        dots[k].setAttribute("data-state", k < i ? "done" : (k === i ? "active" : "future"));
+      }
+    }
+    // Sticky-offset: фактические высоты шапки и навигации → CSS-переменные,
+    // чтобы #scene-nav фиксировался ровно под шапкой, а графика — под ними.
+    function initStickyOffsets() {
+      var header = document.querySelector(".site-header"), nav = document.getElementById("scene-nav");
+      function apply() {
+        var rs = document.documentElement.style;
+        if (header && header.offsetHeight) { rs.setProperty("--header-h", header.offsetHeight + "px"); }
+        if (nav && nav.offsetHeight) { rs.setProperty("--nav-h", nav.offsetHeight + "px"); }
+      }
+      apply();
+      if (window.ResizeObserver) {
+        var ro = new ResizeObserver(apply);
+        if (header) { ro.observe(header); }
+        if (nav) { ro.observe(nav); }
+      }
+      window.addEventListener("resize", apply);
     }
 
     function initScrolly() {
@@ -922,10 +978,16 @@
     }
     function initMeta() {
       var meta = data && data.meta ? data.meta : null; if (!meta) { return; }
-      var accent = document.getElementById("season-accent"), sub = document.getElementById("season-range");
       var smin = meta.season_min, smax = meta.season_max, through = meta.data_through;
+      // Дата данных — в модалке «О данных» (блока охвата в шапке нет).
+      var accent = document.getElementById("season-accent");
       if (accent) { accent.textContent = "по сезон " + (through || (smax ? seasonLabel(smax) : "")); }
-      if (sub && smin && smax) { sub.textContent = "· охват " + (smax - smin + 1) + " " + pluralSeasons(smax - smin + 1); }
+      // Hero-подзаголовок: диапазон + число сезонов в скобках.
+      var hero = document.getElementById("hero-kicker");
+      if (hero && smin && smax) {
+        var n = smax - smin + 1;
+        hero.textContent = "Возрастные кривые NBA · " + smin + "–" + smax + " (" + n + " " + pluralSeasons(n) + ")";
+      }
     }
     function initAbout() {
       var btn = document.getElementById("about-btn"), backdrop = document.getElementById("about-backdrop");
@@ -971,9 +1033,10 @@
     initTheme();
     buildBoard();
     buildNav();
+    initStickyOffsets();
     reconcile();
     initScrolly();
-    window.__nbaScene = goScene;   // тест-сейм для verify_dom (scrollama в headless отсутствует)
+    window.__nbaScene = goScene; // тест-сейм для verify_dom (scrollama в headless отсутствует)
   })();
   </script>
 </body>
